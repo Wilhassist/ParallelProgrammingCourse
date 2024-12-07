@@ -30,6 +30,29 @@
 
 #include "Utils/Timer.h"
 
+void printNonZeroElements(const PPTP::CSRMatrix& matrix) {
+    std::cout << "Non-zero elements in the local matrix:" << std::endl;
+
+    const int* kcols = matrix.kcol();   // Row pointers
+    const int* cols = matrix.cols();   // Column indices
+    const double* values = matrix.values(); // Non-zero values
+
+    for (std::size_t row = 0; row < matrix.nrows(); ++row) {
+        int start = kcols[row];       // Starting index for this row
+        int end = kcols[row + 1];     // Ending index for this row
+
+        std::cout << "Row " << row << ": ";
+        for (int idx = start; idx < end; ++idx) {
+            int col = cols[idx];      // Column index of the non-zero element
+            double value = values[idx]; // Value of the non-zero element
+
+            std::cout << "(" << row << ", " << col << ") -> " << value << " ";
+        }
+        std::cout << std::endl;
+    }
+}
+
+
 MPI_Datatype createCSRRangeType() {
     MPI_Datatype csr_type;
     int block_lengths[5] = {1, 1, 1, 1, 1}; // Each pointer is 1 unit
@@ -252,10 +275,14 @@ int main(int argc, char** argv)
     }
     // --------------------
 
+    printNonZeroElements(local_matrix);
+
     // Step 7 : Computing the local multiplication
     local_y.resize(local_matrix.nrows());
     {
       local_matrix.mult(x,local_y);
+      double local_normy = PPTP::norm2(local_y);
+      std::cout<<"||local y||="<<local_normy<<std::endl;
     }
 
     // Gather the results back to process 0
