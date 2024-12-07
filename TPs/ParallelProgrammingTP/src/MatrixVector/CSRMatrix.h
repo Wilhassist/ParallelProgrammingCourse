@@ -41,7 +41,7 @@ class CSRMatrix
       return m_nnz ;
     }
 
-    CRSData data() {
+    CSRData data() {
       return CRSData(m_kcol.data(), m_cols.data(), m_values.data());
     }
 
