@@ -201,7 +201,7 @@ int main(int argc, char** argv)
         }
         // --------------------
 
-        /*{
+        {
             std::vector<double> y(global_nrows);
             {
             Timer::Sentry sentry(timer,"SpMV") ;
@@ -209,7 +209,7 @@ int main(int argc, char** argv)
             }
             double normy = PPTP::norm2(y) ;
             std::cout<<"||y||="<<normy<<std::endl ;
-        }*/
+        }
     } 
 
     // Step 4 : Zero Sending global matrix size and x and others Receiving 
