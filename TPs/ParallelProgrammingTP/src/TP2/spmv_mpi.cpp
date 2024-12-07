@@ -149,7 +149,7 @@ int main(int argc, char** argv)
     CSRMatrix local_matrix;
     std::size_t local_nrows;
 
-    MPI_Datatype csr_type = createCSRRangeType();
+    //MPI_Datatype csr_type = createCSRRangeType();
     CSRData data;
 
     //Timer::Sentry sentry(timer,"MPI_SpMV") ;
