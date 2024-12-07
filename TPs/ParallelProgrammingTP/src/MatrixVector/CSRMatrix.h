@@ -15,6 +15,8 @@ struct CSRData {
     int* kcols;  // Pointer to the range of m_kcol
     int* cols;   // Pointer to the range of m_cols
     double* values; // Pointer to the range of m_values
+    std::size_t nrows;
+    std::size_t nnz;
 };
 
 class CSRMatrix
@@ -43,7 +45,34 @@ class CSRMatrix
     }
 
     CSRData data() {
-      return CSRData{m_kcol.data(), m_cols.data(), m_values.data()};
+      return CSRData{m_kcol.data(), m_cols.data(), m_values.data(), m_nrows, m_nnz};
+    }
+
+        // Method to extract a submatrix
+    CSRMatrix extractSubmatrix(std::size_t start, std::size_t end) const {
+        // Check bounds
+        if (start >= end || end > nrows) {
+            throw std::out_of_range("Invalid range for submatrix extraction");
+        }
+
+        // Create new CSRMatrix for the result
+        CSRMatrix submatrix;
+        submatrix.m_nrows = end - start; // Number of rows in the submatrix
+
+        // Adjust kcols for the submatrix
+        submatrix.m_kcol.resize(submatrix.m_nrows + 1);
+        std::size_t nnz_start = m_kcol[start]; // First non-zero index in the range
+        for (std::size_t i = start; i < end; ++i) {
+            submatrix.m_kcol[i - start] = m_kcol[i] - nnz_start;
+        }
+        submatrix.m_kcol[submatrix.nrows] = m_kcol[end] - nnz_start; // Final row pointer
+
+        // Extract relevant cols and values
+        std::size_t nnz_end = m_kcol[end]; // Last non-zero index in the range
+        submatrix.m_cols.assign(m_cols.begin() + nnz_start, m_cols.begin() + nnz_end);
+        submatrix.m_values.assign(m_values.begin() + nnz_start, m_values.begin() + nnz_end);
+
+        return submatrix;
     }
 
     void setFromTriplets(int nrows, std::vector<MatrixEntryType> const& entries)

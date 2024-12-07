@@ -32,19 +32,37 @@
 
 MPI_Datatype createCSRRangeType() {
     MPI_Datatype csr_type;
-    int block_lengths[3] = {1, 1, 1}; // Each pointer is 1 unit
-    MPI_Aint offsets[3];
-    MPI_Datatype types[3] = {MPI_INT, MPI_INT, MPI_DOUBLE};
+    int block_lengths[5] = {1, 1, 1, 1, 1}; // Each pointer is 1 unit
+    MPI_Aint offsets[5];
+    MPI_Datatype types[5] = {MPI_INT, MPI_INT, MPI_DOUBLE, MPI_UNSIGNED_LONG,  MPI_UNSIGNED_LONG};
 
     offsets[0] = offsetof(PPTP::CSRData, kcols);
     offsets[1] = offsetof(PPTP::CSRData, cols);
     offsets[2] = offsetof(PPTP::CSRData, values);
+    offsets[3] = offsetof(PPTP::CSRData, nrows);
+    offsets[4] = offsetof(PPTP::CSRData, nnz);
 
-    MPI_Type_create_struct(3, block_lengths, offsets, types, &csr_type);
+    MPI_Type_create_struct(5, block_lengths, offsets, types, &csr_type);
     MPI_Type_commit(&csr_type);
 
     return csr_type;
 }
+
+/*void recreateCSRMatrix(PPTP::CSRMatrix& matrix, const PPTP::CSRData& data) {
+    // Resize vectors in the CSRMatrix
+    matrix.m_kcol.resize(data.nrows + 1);
+    matrix.m_cols.resize(data.nnz);
+    matrix.m_values.resize(data.nnz);
+
+    // Copy data from the received struct into the vectors
+    std::copy(data.kcols, data.kcols + (data.nrows + 1), matrix.m_kcol.begin());
+    std::copy(data.cols, data.cols + data.nnz, matrix.m_cols.begin());
+    std::copy(data.values, data.values + data.nnz, matrix.m_values.begin());
+
+    // Update matrix metadata
+    matrix.nrows = data.nrows;
+    matrix.ncols = *std::max_element(matrix.m_cols.begin(), matrix.m_cols.end()) + 1; // Max column index + 1
+}*/
 
 int main(int argc, char** argv)
 {
@@ -127,6 +145,7 @@ int main(int argc, char** argv)
     MPI_Datatype csr_type = createCSRRangeType();
     CSRData data;
 
+    Timer::Sentry sentry(timer,"MPI_SpMV") ;
     if(world_rank == 0)
     {
         CSRMatrix matrix;
@@ -162,7 +181,7 @@ int main(int argc, char** argv)
                 // Sending local_nrows
                 MPI_Send(&local_nrows, 1, MPI_UNSIGNED_LONG, i, 0, MPI_COMM_WORLD);
                 
-                data = matrix.data();
+                data = matrix.extractSubmatrix(0, local_nrows).data();
 
                 // Sending local matrix_data
                 MPI_Send(&data, 1, csr_type, i, 1, MPI_COMM_WORLD);
@@ -207,7 +226,7 @@ int main(int argc, char** argv)
 
         // Receiving local_matrix_data
         MPI_Recv(&data, 1, csr_type, 0, 1, MPI_COMM_WORLD, &status);
-        std::cout << "Received local matrix data " << data.kcols <<std::endl;
+        std::cout << "Received local matrix data " << data.nnz <<std::endl;
 
     }
     // --------------------
