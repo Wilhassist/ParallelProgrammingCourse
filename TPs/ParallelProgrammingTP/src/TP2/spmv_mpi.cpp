@@ -285,7 +285,7 @@ int main(int argc, char** argv)
     }
 
     std::cout << "Local y vector: \n";
-    for (int i = 0; i < local_nrows; ++i) {
+    for (int i = 0; i < local_y.size(); ++i) {
       std::cout << local_y[i] << " ";
     }
     std::cout << std::endl;
