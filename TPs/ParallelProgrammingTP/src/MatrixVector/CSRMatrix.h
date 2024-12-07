@@ -12,9 +12,9 @@ namespace PPTP
 {
 
 struct CSRData {
-    int* kcols;  // Pointer to the range of m_kcol
-    int* cols;   // Pointer to the range of m_cols
-    double* values; // Pointer to the range of m_values
+    std::vector<int> kcol;  // Pointer to the range of m_kcol
+    std::vector<int> cols;   // Pointer to the range of m_cols
+    std::vector<double> values; // Pointer to the range of m_values
     std::size_t nrows;
     std::size_t nnz;
 };
@@ -45,8 +45,10 @@ class CSRMatrix
     }
 
     CSRData data() {
-      return CSRData{m_kcol.data(), m_cols.data(), m_values.data(), m_nrows, m_nnz};
+      return CSRData{m_kcol, m_cols, m_values, m_nrows, m_nnz};
     }
+
+
 
         // Method to extract a submatrix
     CSRMatrix extractSubmatrix(std::size_t start, std::size_t end) const {

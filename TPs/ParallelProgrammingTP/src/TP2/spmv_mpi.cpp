@@ -178,7 +178,7 @@ int main(int argc, char** argv)
                 buffer[1] = data.nnz;
 
                 // Pack kcols
-                std::copy(data.kcols.begin(), data.kcols.end(), buffer.begin() + 2);
+                std::copy(data.kcol.begin(), data.kcols.end(), buffer.begin() + 2);
 
                 // Pack cols (offset by 2 + (nrows + 1))
                 std::copy(data.cols.begin(), data.cols.end(), buffer.begin() + 2 + (data.nrows + 1));
