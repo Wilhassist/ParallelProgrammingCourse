@@ -101,38 +101,51 @@ int main(int argc, char** argv)
   }
   else
   {
-    CSRMatrix matrix ;
-    std::cout << "Process " << world_rank << " in " << world_size <<std::endl;
+    std::cout << "Process " << world_rank + 1 << " in " << world_size <<std::endl;
+
+    std::size_t global_nrows;
 
     if(world_rank == 0)
     {
+        CSRMatrix matrix ;
+
         if(vm.count("file"))
         {
-        std::string file = vm["file"].as<std::string>() ;
-        generator.readFromFile(file,matrix) ;
+            std::string file = vm["file"].as<std::string>() ;
+            generator.readFromFile(file,matrix) ;
         }
         else
         {
-        int nx = vm["nx"].as<int>() ;
-        generator.genLaplacian(nx,matrix) ;
+            int nx = vm["nx"].as<int>() ;
+            generator.genLaplacian(nx,matrix) ;
         }
+        
+        global_nrows = matrix.nrows();
+        std::vector<double> x(global_nrows);
 
-        std::size_t nrows = matrix.nrows();
-        std::vector<double> x,y,y2 ;
-        x.resize(nrows) ;
-        y.resize(nrows) ;
-        y2.resize(nrows) ;
-
-        for(std::size_t i=0;i<nrows;++i)
-        x[i] = i+1 ;
+        for(std::size_t i=0;i<global_nrows;++i)
+            x[i] = i+1 ;
 
         {
-        Timer::Sentry sentry(timer,"SpMV") ;
-        matrix.mult(x,y) ;
+            std::vector<double> y(global_nrows);
+            {
+            Timer::Sentry sentry(timer,"SpMV") ;
+            matrix.mult(x,y) ;
+            }
+            double normy = PPTP::norm2(y) ;
+            std::cout<<"||y||="<<normy<<std::endl ;
         }
-        double normy = PPTP::norm2(y) ;
-        std::cout<<"||y||="<<normy<<std::endl ;
     } 
+
+
+    std::size_t local_nrows;
+    // Step 4 : Zero Sending and others Receiving Data
+    {
+        // gloal_matrix_size
+        MPI_Bcast(&global_nrows, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
+        std::cout << "Global nrows " << global_nrows <<std::endl;
+
+    }
     
   }
   timer.printInfo();
