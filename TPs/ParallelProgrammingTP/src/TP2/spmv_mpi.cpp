@@ -162,9 +162,7 @@ int main(int argc, char** argv)
                 // Sending local_nrows
                 MPI_Send(&local_nrows, 1, MPI_UNSIGNED_LONG, i, 0, MPI_COMM_WORLD);
                 
-                data.kcols = matrix.get_kcols();
-                data.cols = matrix.get_cols();
-                data.values = matrix.data() 
+                data = matrix.data();
 
                 // Sending local matrix_data
                 MPI_Send(&data, 1, csr_type, i, 1, MPI_COMM_WORLD);
