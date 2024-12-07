@@ -11,6 +11,12 @@
 namespace PPTP
 {
 
+struct CSRData {
+    int* kcols;  // Pointer to the range of m_kcol
+    int* cols;   // Pointer to the range of m_cols
+    double* values; // Pointer to the range of m_values
+};
+
 class CSRMatrix
 {
   public:
@@ -33,6 +39,10 @@ class CSRMatrix
 
     std::size_t nnz() const {
       return m_nnz ;
+    }
+
+    CRSData data() {
+      return CRSData(m_kcol.data(), m_cols.data(), m_values.data());
     }
 
     void setFromTriplets(int nrows, std::vector<MatrixEntryType> const& entries)

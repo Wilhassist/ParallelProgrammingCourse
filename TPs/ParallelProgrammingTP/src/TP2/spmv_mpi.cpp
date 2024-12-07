@@ -30,6 +30,22 @@
 
 #include "Utils/Timer.h"
 
+MPI_Datatype createCSRRangeType() {
+    MPI_Datatype csr_type;
+    int block_lengths[3] = {1, 1, 1}; // Each pointer is 1 unit
+    MPI_Aint offsets[3];
+    MPI_Datatype types[3] = {MPI_INT, MPI_INT, MPI_DOUBLE};
+
+    offsets[0] = offsetof(CSRData, kcols);
+    offsets[1] = offsetof(CSRData, cols);
+    offsets[2] = offsetof(CSRData, values);
+
+    MPI_Type_create_struct(3, block_lengths, offsets, types, &csr_type);
+    MPI_Type_commit(&csr_type);
+
+    return csr_type;
+}
+
 int main(int argc, char** argv)
 {
   using namespace boost::program_options ;
@@ -108,6 +124,9 @@ int main(int argc, char** argv)
     CSRMatrix local_matrix;
     std::size_t local_nrows;
 
+    MPI_Datatype csr_type = createCSRRangeType();
+    CSRData data;
+
     if(world_rank == 0)
     {
         CSRMatrix matrix;
@@ -142,6 +161,14 @@ int main(int argc, char** argv)
 
                 // Sending local_nrows
                 MPI_Send(&local_nrows, 1, MPI_UNSIGNED_LONG, i, 0, MPI_COMM_WORLD);
+                
+                data.kcols = matrix.get_kcols();
+                data.cols = matrix.get_cols();
+                data.values = matrix.data() 
+
+                // Sending local matrix_data
+                MPI_Send(&data, 1, csr_type, i, 1, MPI_COMM_WORLD);
+
                 offset += local_nrows;
             }
         }
@@ -175,11 +202,19 @@ int main(int argc, char** argv)
     if(world_rank != 0)
     {
         MPI_Status status;
+
         // Receiving local_nrows
         MPI_Recv(&local_nrows, 1, MPI_UNSIGNED_LONG, 0, 0, MPI_COMM_WORLD, &status);
         std::cout << "Received local nrows " << local_nrows <<std::endl;
+
+        // Receiving local_matrix_data
+        MPI_Recv(&data, 1, csr_type, i, 1, MPI_COMM_WORLD, &status);
+        std::cout << "Received local matrix data " << data.kcols.size() << " * " << data.cols.size() << " * " << data.data.size() <<std::endl;
+
     }
     // --------------------
+
+    MPI_Type_free(&csr_type);
 
   }
   timer.printInfo();
