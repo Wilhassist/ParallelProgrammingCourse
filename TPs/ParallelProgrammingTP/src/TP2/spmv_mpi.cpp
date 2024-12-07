@@ -30,6 +30,13 @@
 
 #include "Utils/Timer.h"
 
+
+struct CSRData {
+    int* kcols;  // Pointer to the range of m_kcol
+    int* cols;   // Pointer to the range of m_cols
+    double* values; // Pointer to the range of m_values
+};
+
 MPI_Datatype createCSRRangeType() {
     MPI_Datatype csr_type;
     int block_lengths[3] = {1, 1, 1}; // Each pointer is 1 unit
@@ -206,8 +213,8 @@ int main(int argc, char** argv)
         std::cout << "Received local nrows " << local_nrows <<std::endl;
 
         // Receiving local_matrix_data
-        MPI_Recv(&data, 1, csr_type, i, 1, MPI_COMM_WORLD, &status);
-        std::cout << "Received local matrix data " << data.kcols.size() << " * " << data.cols.size() << " * " << data.data.size() <<std::endl;
+        MPI_Recv(&data, 1, csr_type, 0, 1, MPI_COMM_WORLD, &status);
+        std::cout << "Received local matrix data " << data.kcols.size() << " * " << data.cols.size() << " * " << data.values.size() <<std::endl;
 
     }
     // --------------------
