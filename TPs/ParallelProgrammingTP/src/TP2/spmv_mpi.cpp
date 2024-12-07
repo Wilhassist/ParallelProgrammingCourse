@@ -104,6 +104,7 @@ int main(int argc, char** argv)
     std::cout << "Process " << world_rank + 1 << " in " << world_size <<std::endl;
 
     std::size_t global_nrows;
+    std::vector<double> x;
 
     if(world_rank == 0)
     {
@@ -121,10 +122,14 @@ int main(int argc, char** argv)
         }
         
         global_nrows = matrix.nrows();
-        std::vector<double> x(global_nrows);
+        x.resize(global_nrows);
 
         for(std::size_t i=0;i<global_nrows;++i)
             x[i] = i+1 ;
+
+        {
+
+        }
 
         {
             std::vector<double> y(global_nrows);
@@ -144,6 +149,11 @@ int main(int argc, char** argv)
         // gloal_matrix_size
         MPI_Bcast(&global_nrows, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
         std::cout << "Global nrows " << global_nrows <<std::endl;
+
+        // vector x
+        x.resize(global_nrows);
+        MPI_Bcast(&x, global_nrows, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+        std::cout << " Vector of size " << x.size() << " last element " << x[-1] <<std::endl;
 
     }
     
