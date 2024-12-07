@@ -53,7 +53,7 @@ void printNonZeroElements(const PPTP::CSRMatrix& matrix) {
 }
 
 
-MPI_Datatype createCSRRangeType() {
+/*MPI_Datatype createCSRRangeType() {
     MPI_Datatype csr_type;
     int block_lengths[5] = {1, 1, 1, 1, 1}; // Each pointer is 1 unit
     MPI_Aint offsets[5];
@@ -69,7 +69,7 @@ MPI_Datatype createCSRRangeType() {
     MPI_Type_commit(&csr_type);
 
     return csr_type;
-}
+}*/
 
 int main(int argc, char** argv)
 {
@@ -282,21 +282,26 @@ int main(int argc, char** argv)
     local_y.resize(local_matrix.nrows());
     {
       local_matrix.mult(x,local_y);
-      double local_normy = PPTP::norm2(local_y);
-      std::cout<<"||local y||="<<local_normy<<std::endl;
     }
 
     // Gather the results back to process 0
     y.resize(global_nrows);
     MPI_Gather(local_y.data(), local_y.size(), MPI_DOUBLE, y.data(), local_nrows, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
+
     if (world_rank == 0)
     {
       double normy2 = PPTP::norm2(y);
       std::cout<<"||MPI - y||="<<normy2<<std::endl;
+
+      std::cout << "Gathered y vector: \n";
+      for (int i = 0; i < global_nrows; ++i) {
+        std::cout << global_y[i] << " ";
+      }
+      std::cout << std::endl;
     }
 
-    MPI_Type_free(&csr_type);
+    //MPI_Type_free(&csr_type);
 
   }
   timer.printInfo();
