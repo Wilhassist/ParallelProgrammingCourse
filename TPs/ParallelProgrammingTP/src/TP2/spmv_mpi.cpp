@@ -121,7 +121,7 @@ int main(int argc, char** argv)
     std::cout << "Process " << world_rank + 1 << " in " << world_size <<std::endl;
 
     std::size_t global_nrows;
-    std::vector<double> x;
+    std::vector<double> x, y, local_y;
 
     CSRMatrix local_matrix;
     std::size_t local_nrows;
@@ -201,7 +201,7 @@ int main(int argc, char** argv)
         }
         // --------------------
 
-        {
+        /*{
             std::vector<double> y(global_nrows);
             {
             Timer::Sentry sentry(timer,"SpMV") ;
@@ -209,7 +209,7 @@ int main(int argc, char** argv)
             }
             double normy = PPTP::norm2(y) ;
             std::cout<<"||y||="<<normy<<std::endl ;
-        }
+        }*/
     } 
 
     // Step 4 : Zero Sending global matrix size and x and others Receiving 
@@ -221,7 +221,7 @@ int main(int argc, char** argv)
         // vector x
         x.resize(global_nrows);
         MPI_Bcast(x.data(), global_nrows, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-        std::cout << "Vector of size " << x.size() << " last element " << x[-1] <<std::endl;
+        std::cout << "Vector of size " << x.size() <<std::endl;
     }
     // --------------------
 
@@ -253,8 +253,19 @@ int main(int argc, char** argv)
     // --------------------
 
     // Step 7 : Computing the local multiplication
+    local_y.resize(local_matrix.nrows());
     {
-      
+      local_matrix.mult(x,local_y);
+    }
+
+    // Gather the results back to process 0
+    y.resize(global_nrows);
+    MPI_Gather(local_y.data(), local_y.size(), MPI_DOUBLE, y.data(), local_nrows, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+    if (world_rank == 0)
+    {
+      double normy2 = PPTP::norm2(y);
+      std::cout<<"||MPI - y||="<<normy2<<std::endl;
     }
 
     MPI_Type_free(&csr_type);
