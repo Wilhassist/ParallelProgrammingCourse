@@ -286,6 +286,7 @@ int main(int argc, char** argv)
 
     // Gather the results back to process 0
     y.resize(global_nrows);
+    std::cout << "local y size " << local_y.size() << std::endl;
     MPI_Gather(local_y.data(), local_y.size(), MPI_DOUBLE, y.data(), local_y.size(), MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
 
