@@ -207,7 +207,7 @@ int main(int argc, char** argv)
 
         // Receiving local_matrix_data
         MPI_Recv(&data, 1, csr_type, 0, 1, MPI_COMM_WORLD, &status);
-        std::cout << "Received local matrix data " << data.kcols.size() << " * " << data.cols.size() << " * " << data.values.size() <<std::endl;
+        std::cout << "Received local matrix data " << data.kcols[0] << " * " << data.cols[0] << " * " << data.values[0] <<std::endl;
 
     }
     // --------------------
