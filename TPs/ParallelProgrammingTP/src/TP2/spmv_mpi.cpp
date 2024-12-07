@@ -211,7 +211,6 @@ int main(int argc, char** argv)
         // Receiving local_matrix_data
         MPI_Recv(&data, 1, csr_type, 0, 1, MPI_COMM_WORLD, &status);
 
-        local_matrix(data.nrows);
         local_matrix.copyCSRMatrixFromData(data);
         std::cout << "Received local matrix data " << local_matrix.data().nrows <<std::endl;
 
