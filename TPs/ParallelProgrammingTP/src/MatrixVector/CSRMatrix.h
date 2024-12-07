@@ -49,15 +49,15 @@ class CSRMatrix
     }
     
 
-    int* kcol() {
+    const int* kcol() const {
       return m_kcol.data() ;
     }
 
-    int* cols() {
+    const int* cols() const{
       return m_cols.data() ;
     }
 
-    double* values() {
+    const double* values() const{
       return m_values.data() ;
     }
 
