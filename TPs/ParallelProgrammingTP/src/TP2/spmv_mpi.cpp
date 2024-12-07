@@ -296,7 +296,7 @@ int main(int argc, char** argv)
 
       std::cout << "Gathered y vector: \n";
       for (int i = 0; i < global_nrows; ++i) {
-        std::cout << global_y[i] << " ";
+        std::cout << y[i] << " ";
       }
       std::cout << std::endl;
     }
