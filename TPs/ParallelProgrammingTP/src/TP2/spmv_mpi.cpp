@@ -48,22 +48,6 @@ MPI_Datatype createCSRRangeType() {
     return csr_type;
 }
 
-/*void recreateCSRMatrix(PPTP::CSRMatrix& matrix, const PPTP::CSRData& data) {
-    // Resize vectors in the CSRMatrix
-    matrix.m_kcol.resize(data.nrows + 1);
-    matrix.m_cols.resize(data.nnz);
-    matrix.m_values.resize(data.nnz);
-
-    // Copy data from the received struct into the vectors
-    std::copy(data.kcols, data.kcols + (data.nrows + 1), matrix.m_kcol.begin());
-    std::copy(data.cols, data.cols + data.nnz, matrix.m_cols.begin());
-    std::copy(data.values, data.values + data.nnz, matrix.m_values.begin());
-
-    // Update matrix metadata
-    matrix.nrows = data.nrows;
-    matrix.ncols = *std::max_element(matrix.m_cols.begin(), matrix.m_cols.end()) + 1; // Max column index + 1
-}*/
-
 int main(int argc, char** argv)
 {
   using namespace boost::program_options ;
@@ -181,7 +165,7 @@ int main(int argc, char** argv)
                 // Sending local_nrows
                 MPI_Send(&local_nrows, 1, MPI_UNSIGNED_LONG, i, 0, MPI_COMM_WORLD);
                 
-                data = matrix.extractSubmatrix(0, local_nrows).data();
+                data = matrix.extractSubmatrix(offset, offset + local_nrows).data();
 
                 // Sending local matrix_data
                 MPI_Send(&data, 1, csr_type, i, 1, MPI_COMM_WORLD);
