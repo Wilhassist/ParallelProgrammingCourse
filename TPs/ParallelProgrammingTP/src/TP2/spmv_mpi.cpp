@@ -176,7 +176,7 @@ int main(int argc, char** argv)
     {
         MPI_Status status;
         // Receiving local_nrows
-        MPI_Recv(&local_nrows, 1, MPI_UNSIGNED_LONG, 0, 0, MPI_COMM_WORLD, status);
+        MPI_Recv(&local_nrows, 1, MPI_UNSIGNED_LONG, 0, 0, MPI_COMM_WORLD, &status);
         std::cout << "Received local nrows " << local_nrows <<std::endl;
     }
     // --------------------
