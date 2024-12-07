@@ -11,8 +11,10 @@
 #include <boost/program_options/parsers.hpp>
 #include <boost/program_options/cmdline.hpp>
 #include <boost/program_options/variables_map.hpp>
-#include "omp.h"
-#include "tbb/tbb.h"
+
+// step 1 : include mpi
+#include <mpi.h>
+// --------------------
 
 #include <string>
 #include <vector>
@@ -49,14 +51,17 @@ int main(int argc, char** argv)
       return 1;
   }
 
-  int nb_threads = vm["nb-threads"].as<int>() ;
-  if(nb_threads>0)
-    omp_set_num_threads(nb_threads) ;
+  // step 2 : initialize (1) and finalize (2)
+  MPI_Init(&argc, &argv); // (1)
+  // --------------------
 
-  int nb_procs     = omp_get_num_procs() ;
-  std::cout<<"NB PROCS     :"<<nb_procs<<std::endl ;
-  int nb_available_threads = omp_get_max_threads() ;
-  std::cout<<"NB AVAILABLE_THREADS :"<<nb_available_threads<<std::endl ;
+  // step 3 : Initialize Variables
+  int world_size;
+  int world_rank;
+
+  MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+  // --------------------
 
   using namespace PPTP ;
 
@@ -97,41 +102,44 @@ int main(int argc, char** argv)
   else
   {
     CSRMatrix matrix ;
-    if(vm.count("file"))
+    std::cout << "Process " << world_rank << " in " << world_size <<std::endl;
+
+    if(world_rank == 0)
     {
-      std::string file = vm["file"].as<std::string>() ;
-      generator.readFromFile(file,matrix) ;
-    }
-    else
-    {
-      int nx = vm["nx"].as<int>() ;
-      generator.genLaplacian(nx,matrix) ;
-    }
+        if(vm.count("file"))
+        {
+        std::string file = vm["file"].as<std::string>() ;
+        generator.readFromFile(file,matrix) ;
+        }
+        else
+        {
+        int nx = vm["nx"].as<int>() ;
+        generator.genLaplacian(nx,matrix) ;
+        }
 
+        std::size_t nrows = matrix.nrows();
+        std::vector<double> x,y,y2 ;
+        x.resize(nrows) ;
+        y.resize(nrows) ;
+        y2.resize(nrows) ;
 
-    std::size_t nrows = matrix.nrows();
-    std::vector<double> x,y,y2 ;
-    x.resize(nrows) ;
-    y.resize(nrows) ;
-    y2.resize(nrows) ;
+        for(std::size_t i=0;i<nrows;++i)
+        x[i] = i+1 ;
 
-    for(std::size_t i=0;i<nrows;++i)
-      x[i] = i+1 ;
-
-    {
-      Timer::Sentry sentry(timer,"SpMV") ;
-      matrix.mult(x,y) ;
-    }
-    double normy = PPTP::norm2(y) ;
-    std::cout<<"||y||="<<normy<<std::endl ;
-
-    {
-      Timer::Sentry sentry(timer,"OMPSpMV") ;
-      matrix.mult(x,y2) ;
-    }
-    double normy2 = PPTP::norm2(y2) ;
-    std::cout<<"||y2||="<<normy2<<std::endl ;
+        {
+        Timer::Sentry sentry(timer,"SpMV") ;
+        matrix.mult(x,y) ;
+        }
+        double normy = PPTP::norm2(y) ;
+        std::cout<<"||y||="<<normy<<std::endl ;
+    } 
+    
   }
   timer.printInfo();
+
+  // step 2 : initialize (1) and finalize (2)
+  MPI_Finalize(); // (2)
+  // --------------------
+
   return 0 ;
 }
