@@ -181,13 +181,13 @@ int main(int argc, char** argv)
                 buffer[1] = nnz;
 
                 // Pack kcols
-                std::copy(local_matrix.kcol().begin(), local_matrix.kcol().end(), buffer.begin() + 2);
+                std::copy(local_matrix.kcol(), local_matrix.kcol() + + local_matrix.nrows  + 1, buffer.begin() + 2);
 
                 // Pack cols (offset by 2 + (nrows + 1))
-                std::copy(local_matrix.cols().begin(), local_matrix.cols().end(), buffer.begin() + 2 + (data.nrows + 1));
+                std::copy(local_matrix.cols(), local_matrix.cols() + local_matrix.nnz(), buffer.begin() + 2 + (data.nrows + 1));
 
                 // Pack values (offset by 2 + (nrows + 1) + nnz)
-                std::copy(local_matrix.values().begin(), local_matrix.values().end(), buffer.begin() + 2 + (data.nrows + 1) + data.nnz);
+                std::copy(local_matrix.values(), local_matrix.values() + local_matrix.nnz(), buffer.begin() + 2 + (data.nrows + 1) + data.nnz);
 
                 // Send the buffer
                 MPI_Send(buffer.data(), total_size, MPI_DOUBLE, i, 1, MPI_COMM_WORLD);
