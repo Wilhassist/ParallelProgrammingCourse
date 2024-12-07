@@ -11,6 +11,12 @@
 namespace PPTP
 {
 
+struct CSRData {
+    int* kcols;  // Pointer to the range of m_kcol
+    int* cols;   // Pointer to the range of m_cols
+    double* values; // Pointer to the range of m_values
+};
+
 class CSRMatrix
 {
   public:

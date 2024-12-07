@@ -30,22 +30,15 @@
 
 #include "Utils/Timer.h"
 
-
-struct CSRData {
-    int* kcols;  // Pointer to the range of m_kcol
-    int* cols;   // Pointer to the range of m_cols
-    double* values; // Pointer to the range of m_values
-};
-
 MPI_Datatype createCSRRangeType() {
     MPI_Datatype csr_type;
     int block_lengths[3] = {1, 1, 1}; // Each pointer is 1 unit
     MPI_Aint offsets[3];
     MPI_Datatype types[3] = {MPI_INT, MPI_INT, MPI_DOUBLE};
 
-    offsets[0] = offsetof(CSRData, kcols);
-    offsets[1] = offsetof(CSRData, cols);
-    offsets[2] = offsetof(CSRData, values);
+    offsets[0] = offsetof(PPTP::CSRData, kcols);
+    offsets[1] = offsetof(PPTP::CSRData, cols);
+    offsets[2] = offsetof(PPTP::CSRData, values);
 
     MPI_Type_create_struct(3, block_lengths, offsets, types, &csr_type);
     MPI_Type_commit(&csr_type);
