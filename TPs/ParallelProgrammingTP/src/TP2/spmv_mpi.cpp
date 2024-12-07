@@ -284,6 +284,12 @@ int main(int argc, char** argv)
       local_matrix.mult(x,local_y);
     }
 
+    std::cout << "Local y vector: \n";
+      for (int i = 0; i < local_nrows; ++i) {
+        std::cout << local_y[i] << " ";
+      }
+      std::cout << std::endl;
+
     // Gather the results back to process 0
     y.resize(global_nrows);
     std::cout << "local y size " << local_y.size() << std::endl;
