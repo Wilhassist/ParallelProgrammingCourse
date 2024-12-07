@@ -75,21 +75,21 @@ class CSRMatrix
         return submatrix;
     }
 
-    void createCSRMatrixFromData(PPTP::CSRMatrix& matrix, const PPTP::CSRData& data) {
+    void copyCSRMatrixFromData(const PPTP::CSRData& data) {
       // Resize vectors in the CSRMatrix
       
-      matrix.m_kcol.resize(data.nrows + 1);
-      matrix.m_cols.resize(data.nnz);
-      matrix.m_values.resize(data.nnz);
+      m_kcol.resize(data.nrows + 1);
+      m_cols.resize(data.nnz);
+      m_values.resize(data.nnz);
 
       // Copy data from the received struct into the vectors
-      std::copy(data.kcols, data.kcols + (data.nrows + 1), matrix.m_kcol.begin());
-      std::copy(data.cols, data.cols + data.nnz, matrix.m_cols.begin());
-      std::copy(data.values, data.values + data.nnz, matrix.m_values.begin());
+      std::copy(data.kcols, data.kcols + (data.nrows + 1), m_kcol.begin());
+      std::copy(data.cols, data.cols + data.nnz, m_cols.begin());
+      std::copy(data.values, data.values + data.nnz, m_values.begin());
 
       // Update matrix metadata
-      matrix.m_nrows = data.nrows;
-      matrix.m_nnz = data.nnz;
+      m_nrows = data.nrows;
+      m_nnz = data.nnz;
     }
 
     void setFromTriplets(int nrows, std::vector<MatrixEntryType> const& entries)
