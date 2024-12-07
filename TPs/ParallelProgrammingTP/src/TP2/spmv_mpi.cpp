@@ -286,7 +286,7 @@ int main(int argc, char** argv)
 
     // Gather the results back to process 0
     y.resize(global_nrows);
-    MPI_Gather(local_y.data(), local_nrows, MPI_DOUBLE, y.data(), local_nrows, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_Gather(local_y.data(), local_y.size(), MPI_DOUBLE, y.data(), local_y.size(), MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
 
     if (world_rank == 0)
