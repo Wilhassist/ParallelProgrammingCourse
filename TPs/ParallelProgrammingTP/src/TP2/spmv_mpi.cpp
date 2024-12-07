@@ -292,10 +292,27 @@ int main(int argc, char** argv)
 
     // Gather the results back to process 0
     y.resize(global_nrows);
-    std::cout << "local y size " << local_y.size() << std::endl;
-    MPI_Gather(local_y.data(), local_y.size(), MPI_DOUBLE, y.data(), local_y.size(), MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
 
+    // Create sendcounts and displacements arrays for MPI_Gatherv
+    std::vector<int> sendcounts(world_size, 0);
+    std::vector<int> displacements(world_size, 0);
+
+    // Calculate sendcounts and displacements
+    int total_send_count = 0;
+    for (int i = 0; i < world_size; ++i) {
+        sendcounts[i] = (i < remainder) ? (global_nrows / world_size + 1) : (global_nrows / world_size);
+        if (i > 0) {
+            displacements[i] = displacements[i - 1] + sendcounts[i - 1];
+        }
+        total_send_count += sendcounts[i];
+    }
+
+    // Gather data to root (process 0)
+    MPI_Gatherv(local_y.data(), local_y.size(), MPI_DOUBLE, 
+                y.data(), sendcounts.data(), displacements.data(), 
+                MPI_DOUBLE, 0, MPI_COMM_WORLD);
+                
     if (world_rank == 0)
     {
       double normy2 = PPTP::norm2(y);
