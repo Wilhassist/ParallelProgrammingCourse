@@ -35,9 +35,9 @@ class CSRMatrix
       m_kcol.resize(m_nrows+1);
       m_cols.resize(m_nnz);
       m_values.resize(m_nnz);
-      m_kcol = data.kcols;
-      m_cols = data.cols;
-      m_values = data.values;
+      m_kcol.data() = data.kcols;
+      m_cols.data() = data.cols;
+      m_values.data() = data.values;
     }
 
     virtual ~CSRMatrix(){}
