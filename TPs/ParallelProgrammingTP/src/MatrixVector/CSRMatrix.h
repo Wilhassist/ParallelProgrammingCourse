@@ -27,19 +27,6 @@ class CSRMatrix
     : m_nrows(nrows)
     {}
 
-
-    void copy(std::size_t nrows=0, std::size_t nnz=0, CSRData data)
-    {
-      m_nrows = nrows;
-      m_nnz = nnz;
-      m_kcol.resize(m_nrows+1);
-      m_cols.resize(m_nnz);
-      m_values.resize(m_nnz);
-      m_kcol.data() = &data.kcols;
-      m_cols.data() = &data.cols;
-      m_values.data() = &data.values;
-    }
-
     virtual ~CSRMatrix(){}
 
     void setChunkSize(int chunk_size)
