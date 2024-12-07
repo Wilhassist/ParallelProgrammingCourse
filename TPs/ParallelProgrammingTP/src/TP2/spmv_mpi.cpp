@@ -285,10 +285,10 @@ int main(int argc, char** argv)
     }
 
     std::cout << "Local y vector: \n";
-      for (int i = 0; i < local_nrows; ++i) {
-        std::cout << local_y[i] << " ";
-      }
-      std::cout << std::endl;
+    for (int i = 0; i < local_nrows; ++i) {
+      std::cout << local_y[i] << " ";
+    }
+    std::cout << std::endl;
 
     // Gather the results back to process 0
     y.resize(global_nrows);
