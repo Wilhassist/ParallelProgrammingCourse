@@ -152,7 +152,7 @@ int main(int argc, char** argv)
 
         // vector x
         x.resize(global_nrows);
-        MPI_Bcast(&x.data(), global_nrows, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+        MPI_Bcast(x.data(), global_nrows, MPI_DOUBLE, 0, MPI_COMM_WORLD);
         std::cout << " Vector of size " << x.size() << " last element " << x[-1] <<std::endl;
 
     }
