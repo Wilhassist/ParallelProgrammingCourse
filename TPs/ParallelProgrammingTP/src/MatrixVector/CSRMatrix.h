@@ -42,7 +42,7 @@ class CSRMatrix
     }
 
     CSRData data() {
-      return CRSData(m_kcol.data(), m_cols.data(), m_values.data());
+      return CSRData(m_kcol.data(), m_cols.data(), m_values.data());
     }
 
     void setFromTriplets(int nrows, std::vector<MatrixEntryType> const& entries)
