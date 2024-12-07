@@ -28,9 +28,10 @@ class CSRMatrix
     {}
 
 
-    CSRMatrix(std::size_t nrows=0, std::size_t nnz=0, CSRData data)
-    : m_nrows(nrows), m_nnz(m_nnz)
+    void copy(std::size_t nrows=0, std::size_t nnz=0, CSRData data)
     {
+      m_nrows = nrows;
+      m_nnz = nnz;
       m_kcol.resize(m_nrows+1);
       m_cols.resize(m_nnz);
       m_values.resize(m_nnz);
