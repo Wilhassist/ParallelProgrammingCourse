@@ -51,7 +51,7 @@ class CSRMatrix
         // Method to extract a submatrix
     CSRMatrix extractSubmatrix(std::size_t start, std::size_t end) const {
         // Check bounds
-        if (start >= end || end > nrows) {
+        if (start >= end || end > m_nrows) {
             throw std::out_of_range("Invalid range for submatrix extraction");
         }
 
@@ -65,7 +65,7 @@ class CSRMatrix
         for (std::size_t i = start; i < end; ++i) {
             submatrix.m_kcol[i - start] = m_kcol[i] - nnz_start;
         }
-        submatrix.m_kcol[submatrix.nrows] = m_kcol[end] - nnz_start; // Final row pointer
+        submatrix.m_kcol[submatrix.m_nrows] = m_kcol[end] - nnz_start; // Final row pointer
 
         // Extract relevant cols and values
         std::size_t nnz_end = m_kcol[end]; // Last non-zero index in the range
