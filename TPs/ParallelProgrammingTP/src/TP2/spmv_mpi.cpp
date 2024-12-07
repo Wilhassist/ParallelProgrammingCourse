@@ -83,7 +83,6 @@ int main(int argc, char** argv)
       generator.genLaplacian(nx,matrix) ;
     }
 
-
     std::size_t nrows = matrix.rows();
     VectorType x(nrows);
 
@@ -106,9 +105,12 @@ int main(int argc, char** argv)
     std::size_t global_nrows;
     std::vector<double> x;
 
+    CSRMatrix local_matrix;
+    std::size_t local_nrows;
+
     if(world_rank == 0)
     {
-        CSRMatrix matrix ;
+        CSRMatrix matrix;
 
         if(vm.count("file"))
         {
@@ -127,9 +129,23 @@ int main(int argc, char** argv)
         for(std::size_t i=0;i<global_nrows;++i)
             x[i] = i+1 ;
 
+        // Step 5 : Zero Sending local matrix info
+        int offset = 0;
         {
+            std::size_t remainder = global_nrows % world_size;
+            local_nrows = global_nrows / world_size + (world_rank < remainder ? 1:0);
+            offset += local_nrows;
 
+            for(std::size_t i = 1; i < world_size; ++i)
+            {
+                local_nrows = global_nrows / world_size + (i < remainder ? 1:0);
+
+                // Sending local_nrows
+                MPI_Send(local_nrows, 1, MPI_UNSIGNED_LONG, i, 0, MPI_COMM_WORLD);
+                offset += local_nrows;
+            }
         }
+        // --------------------
 
         {
             std::vector<double> y(global_nrows);
@@ -142,9 +158,7 @@ int main(int argc, char** argv)
         }
     } 
 
-
-    std::size_t local_nrows;
-    // Step 4 : Zero Sending and others Receiving Data
+    // Step 4 : Zero Sending global matrix size and x and others Receiving 
     {
         // gloal_matrix_size
         MPI_Bcast(&global_nrows, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
@@ -153,10 +167,20 @@ int main(int argc, char** argv)
         // vector x
         x.resize(global_nrows);
         MPI_Bcast(x.data(), global_nrows, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-        std::cout << " Vector of size " << x.size() << " last element " << x[-1] <<std::endl;
-
+        std::cout << "Vector of size " << x.size() << " last element " << x[-1] <<std::endl;
     }
-    
+    // --------------------
+
+    // Step 6 : Receiving local matrix infos
+    if(world_rank != 0)
+    {
+        MPI_Status status;
+        // Receiving local_nrows
+        MPI_Recv(&local_nrows, 1, MPI_UNSIGNED_LONG, 0, 0, MPI_COMM_WORLD, status);
+        std::cout << "Received local nrows " << local_nrows <<std::endl;
+    }
+    // --------------------
+
   }
   timer.printInfo();
 
