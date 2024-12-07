@@ -36,7 +36,7 @@ MPI_Datatype createCSRRangeType() {
     MPI_Aint offsets[5];
     MPI_Datatype types[5] = {MPI_INT, MPI_INT, MPI_DOUBLE, MPI_UNSIGNED_LONG,  MPI_UNSIGNED_LONG};
 
-    offsets[0] = offsetof(PPTP::CSRData, kcols);
+    offsets[0] = offsetof(PPTP::CSRData, kcol);
     offsets[1] = offsetof(PPTP::CSRData, cols);
     offsets[2] = offsetof(PPTP::CSRData, values);
     offsets[3] = offsetof(PPTP::CSRData, nrows);
