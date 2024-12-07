@@ -28,7 +28,7 @@ class CSRMatrix
     {}
 
 
-    void copy(std::size_t nrows=0, std::size_t nnz=0, CSRData data)
+    void copy(std::size_t nrows=0, std::size_t nnz=0, CSRData& data)
     {
       m_nrows = nrows;
       m_nnz = nnz;
