@@ -170,7 +170,7 @@ int main(int argc, char** argv)
         
         global_nrows = matrix.nrows();
         x.resize(global_nrows);
-        printNonZeroElements(matrix);
+        //printNonZeroElements(matrix);
 
         for(std::size_t i=0;i<global_nrows;++i)
             x[i] = i+1 ;
@@ -276,7 +276,7 @@ int main(int argc, char** argv)
     }
     // --------------------
 
-    printNonZeroElements(local_matrix);
+    //printNonZeroElements(local_matrix);
 
     // Step 7 : Computing the local multiplication
     local_y.resize(local_matrix.nrows());
