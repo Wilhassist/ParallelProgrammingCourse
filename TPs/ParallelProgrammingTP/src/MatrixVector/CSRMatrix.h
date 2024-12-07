@@ -86,8 +86,8 @@ class CSRMatrix
       m_values.resize(m_nnz);
 
       // Copy data from the received struct into the vectors
-      std::copy(data.begin() + 2, data.begin() + 2 + (m_nrows + 1), m_kcols.begin());
-      std::copy(data.begin() + 2 + (m_nrows + 1), data.begin() + 2 + (m_nrows + 1) + nnz, m_cols.begin());
+      std::copy(data.begin() + 2, data.begin() + 2 + (m_nrows + 1), m_kcol.begin());
+      std::copy(data.begin() + 2 + (m_nrows + 1), data.begin() + 2 + (m_nrows + 1) + m_nnz, m_cols.begin());
       std::copy(data.begin() + 2 + (m_nrows + 1) + m_nnz, data.end(), m_values.begin());
 
     }
