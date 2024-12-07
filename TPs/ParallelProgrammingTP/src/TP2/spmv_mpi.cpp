@@ -170,6 +170,7 @@ int main(int argc, char** argv)
         
         global_nrows = matrix.nrows();
         x.resize(global_nrows);
+        printNonZeroElements(matrix);
 
         for(std::size_t i=0;i<global_nrows;++i)
             x[i] = i+1 ;
