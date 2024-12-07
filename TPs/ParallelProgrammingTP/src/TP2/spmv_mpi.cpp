@@ -167,8 +167,27 @@ int main(int argc, char** argv)
                 
                 data = matrix.extractSubmatrix(offset, offset + local_nrows).data();
 
-                // Sending local matrix_data
-                MPI_Send(&data, 1, csr_type, i, 1, MPI_COMM_WORLD);
+                // Calculate total size for the buffer
+                int total_size = 2 + (data.nrows + 1) + data.nnz + data.nnz; // Metadata + kcols + cols + values
+
+                // Create a buffer for contiguous data
+                std::vector<double> buffer(total_size);
+
+                // Pack metadata
+                buffer[0] = data.nrows;
+                buffer[1] = data.nnz;
+
+                // Pack kcols
+                std::copy(data.kcols.begin(), data.kcols.end(), buffer.begin() + 2);
+
+                // Pack cols (offset by 2 + (nrows + 1))
+                std::copy(data.cols.begin(), data.cols.end(), buffer.begin() + 2 + (data.nrows + 1));
+
+                // Pack values (offset by 2 + (nrows + 1) + nnz)
+                std::copy(data.values.begin(), data.values.end(), buffer.begin() + 2 + (data.nrows + 1) + data.nnz);
+
+                // Send the buffer
+                MPI_Send(buffer.data(), total_size, MPI_DOUBLE, i, 1, MPI_COMM_WORLD);
 
                 offset += local_nrows;
             }
@@ -208,10 +227,18 @@ int main(int argc, char** argv)
         MPI_Recv(&local_nrows, 1, MPI_UNSIGNED_LONG, 0, 0, MPI_COMM_WORLD, &status);
         std::cout << "Received local nrows " << local_nrows <<std::endl;
 
-        // Receiving local_matrix_data
-        MPI_Recv(&data, 1, csr_type, 0, 1, MPI_COMM_WORLD, &status);
+        // Probe message size
+        MPI_Probe(0, 1, MPI_COMM_WORLD, &status);
+        int count;
+        MPI_Get_count(&status, MPI_DOUBLE, &count);
 
-        local_matrix.copyCSRMatrixFromData(data);
+        // Allocate buffer
+        std::vector<double> buffer(count);
+
+        // Receiving local_matrix_data
+        MPI_Recv(buffer.data(), count, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD, &status);
+        
+        local_matrix.copyCSRMatrixFromData(buffer);
         std::cout << "Received local matrix data " << local_matrix.data().nrows <<std::endl;
 
     }
