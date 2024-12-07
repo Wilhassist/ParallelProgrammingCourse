@@ -149,6 +149,8 @@ int main(int argc, char** argv)
     CSRMatrix local_matrix;
     std::size_t local_nrows;
 
+    std::size_t remainder;
+
     //MPI_Datatype csr_type = createCSRRangeType();
     CSRData data;
 
@@ -178,7 +180,7 @@ int main(int argc, char** argv)
         // Step 5 : Zero Sending local matrix info
         int offset = 0;
         {
-          std::size_t remainder = global_nrows % world_size;
+          remainder = global_nrows % world_size;
           local_nrows = global_nrows / world_size + (world_rank < remainder ? 1:0);
           offset += local_nrows;
 
@@ -285,7 +287,7 @@ int main(int argc, char** argv)
     }
 
     std::cout << "Local y vector: \n";
-    for (int i = 0; i < local_y.size(); ++i) {
+    for (std::size_t i = 0; i < local_y.size(); ++i) {
       std::cout << local_y[i] << " ";
     }
     std::cout << std::endl;
@@ -300,7 +302,7 @@ int main(int argc, char** argv)
 
     // Calculate sendcounts and displacements
     int total_send_count = 0;
-    for (int i = 0; i < world_size; ++i) {
+    for (std::size_t i = 0; i < world_size; ++i) {
         sendcounts[i] = (i < remainder) ? (global_nrows / world_size + 1) : (global_nrows / world_size);
         if (i > 0) {
             displacements[i] = displacements[i - 1] + sendcounts[i - 1];
@@ -312,7 +314,7 @@ int main(int argc, char** argv)
     MPI_Gatherv(local_y.data(), local_y.size(), MPI_DOUBLE, 
                 y.data(), sendcounts.data(), displacements.data(), 
                 MPI_DOUBLE, 0, MPI_COMM_WORLD);
-                
+
     if (world_rank == 0)
     {
       double normy2 = PPTP::norm2(y);
