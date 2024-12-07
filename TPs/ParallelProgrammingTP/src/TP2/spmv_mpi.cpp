@@ -141,7 +141,7 @@ int main(int argc, char** argv)
                 local_nrows = global_nrows / world_size + (i < remainder ? 1:0);
 
                 // Sending local_nrows
-                MPI_Send(local_nrows, 1, MPI_UNSIGNED_LONG, i, 0, MPI_COMM_WORLD);
+                MPI_Send(&local_nrows, 1, MPI_UNSIGNED_LONG, i, 0, MPI_COMM_WORLD);
                 offset += local_nrows;
             }
         }
