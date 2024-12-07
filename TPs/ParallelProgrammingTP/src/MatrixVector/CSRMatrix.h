@@ -84,7 +84,7 @@ class CSRMatrix
       std::size_t nnz_end = m_kcol[end]; // Last non-zero index in the range
       submatrix.m_cols.assign(m_cols.begin() + nnz_start, m_cols.begin() + nnz_end);
       submatrix.m_values.assign(m_values.begin() + nnz_start, m_values.begin() + nnz_end);
-      submatrix.nnz = nnz_end - nnz_start;
+      submatrix.m_nnz = nnz_end - nnz_start;
 
       return submatrix;
    }
