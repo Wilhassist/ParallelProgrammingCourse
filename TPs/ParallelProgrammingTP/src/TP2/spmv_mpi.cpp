@@ -165,26 +165,29 @@ int main(int argc, char** argv)
                 // Sending local_nrows
                 MPI_Send(&local_nrows, 1, MPI_UNSIGNED_LONG, i, 0, MPI_COMM_WORLD);
                 
-                data = matrix.extractSubmatrix(offset, offset + local_nrows).data();
+                local_matrix = matrix.extractSubmatrix(offset, offset + local_nrows);
+
+                int nrows = local_matrix.nrows();
+                int nnz = local_matrix.nnz();
 
                 // Calculate total size for the buffer
-                int total_size = 2 + (data.nrows + 1) + data.nnz + data.nnz; // Metadata + kcols + cols + values
+                int total_size = 2 + (nrows + 1) + nnz + nnz; // Metadata + kcols + cols + values
 
                 // Create a buffer for contiguous data
                 std::vector<double> buffer(total_size);
 
                 // Pack metadata
-                buffer[0] = data.nrows;
-                buffer[1] = data.nnz;
+                buffer[0] = nrows;
+                buffer[1] = nnz;
 
                 // Pack kcols
-                std::copy(data.kcol.begin(), data.kcol.end(), buffer.begin() + 2);
+                std::copy(local_matrix.kcol().begin(), local_matrix.kcol().end(), buffer.begin() + 2);
 
                 // Pack cols (offset by 2 + (nrows + 1))
-                std::copy(data.cols.begin(), data.cols.end(), buffer.begin() + 2 + (data.nrows + 1));
+                std::copy(local_matrix.cols().begin(), local_matrix.cols().end(), buffer.begin() + 2 + (data.nrows + 1));
 
                 // Pack values (offset by 2 + (nrows + 1) + nnz)
-                std::copy(data.values.begin(), data.values.end(), buffer.begin() + 2 + (data.nrows + 1) + data.nnz);
+                std::copy(local_matrix.values().begin(), local_matrix.values().end(), buffer.begin() + 2 + (data.nrows + 1) + data.nnz);
 
                 // Send the buffer
                 MPI_Send(buffer.data(), total_size, MPI_DOUBLE, i, 1, MPI_COMM_WORLD);
