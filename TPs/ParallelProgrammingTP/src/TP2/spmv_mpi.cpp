@@ -92,18 +92,6 @@ int main(int argc, char** argv)
       return 1;
   }
 
-  // step 2 : initialize (1) and finalize (2)
-  MPI_Init(&argc, &argv); // (1)
-  // --------------------
-
-  // step 3 : Initialize Variables
-  int world_size;
-  int world_rank;
-
-  MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-  MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
-  // --------------------
-
   using namespace PPTP ;
 
   Timer timer ;
@@ -153,8 +141,21 @@ int main(int argc, char** argv)
 
     //MPI_Datatype csr_type = createCSRRangeType();
     CSRData data;
+    
+    Timer::Sentry sentry(timer,"MPI_SpMV") ;
 
-    //Timer::Sentry sentry(timer,"MPI_SpMV") ;
+    // step 2 : initialize (1) and finalize (2)
+    MPI_Init(&argc, &argv); // (1)
+    // --------------------
+
+    // step 3 : Initialize Variables
+    int world_size;
+    int world_rank;
+
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+    // --------------------
+
     if(world_rank == 0)
     {
         CSRMatrix matrix;
@@ -227,7 +228,7 @@ int main(int argc, char** argv)
         }
         // --------------------
 
-        {
+        /*{
             std::vector<double> y(global_nrows);
             {
             Timer::Sentry sentry(timer,"SpMV") ;
@@ -235,7 +236,7 @@ int main(int argc, char** argv)
             }
             double normy = PPTP::norm2(y) ;
             std::cout<<"||y||="<<normy<<std::endl ;
-        }
+        }*/
     } 
 
     // Step 4 : Zero Sending global matrix size and x and others Receiving 
@@ -328,13 +329,14 @@ int main(int argc, char** argv)
     }
 
     //MPI_Type_free(&csr_type);
+    // step 2 : initialize (1) and finalize (2)
+    MPI_Finalize(); // (2)
+    // --------------------
 
   }
   timer.printInfo();
 
-  // step 2 : initialize (1) and finalize (2)
-  MPI_Finalize(); // (2)
-  // --------------------
+  
 
   return 0 ;
 }
