@@ -30,46 +30,6 @@
 
 #include "Utils/Timer.h"
 
-void printNonZeroElements(const PPTP::CSRMatrix& matrix) {
-    std::cout << "Non-zero elements in the local matrix:" << std::endl;
-
-    const int* kcols = matrix.kcol();   // Row pointers
-    const int* cols = matrix.cols();   // Column indices
-    const double* values = matrix.values(); // Non-zero values
-
-    for (std::size_t row = 0; row < matrix.nrows(); ++row) {
-        int start = kcols[row];       // Starting index for this row
-        int end = kcols[row + 1];     // Ending index for this row
-
-        std::cout << "Row " << row << ": ";
-        for (int idx = start; idx < end; ++idx) {
-            int col = cols[idx];      // Column index of the non-zero element
-            double value = values[idx]; // Value of the non-zero element
-
-            std::cout << "(" << row << ", " << col << ") -> " << value << " ";
-        }
-        std::cout << std::endl;
-    }
-}
-
-
-/*MPI_Datatype createCSRRangeType() {
-    MPI_Datatype csr_type;
-    int block_lengths[5] = {1, 1, 1, 1, 1}; // Each pointer is 1 unit
-    MPI_Aint offsets[5];
-    MPI_Datatype types[5] = {MPI_INT, MPI_INT, MPI_DOUBLE, MPI_UNSIGNED_LONG,  MPI_UNSIGNED_LONG};
-
-    offsets[0] = offsetof(PPTP::CSRData, kcol);
-    offsets[1] = offsetof(PPTP::CSRData, cols);
-    offsets[2] = offsetof(PPTP::CSRData, values);
-    offsets[3] = offsetof(PPTP::CSRData, nrows);
-    offsets[4] = offsetof(PPTP::CSRData, nnz);
-
-    MPI_Type_create_struct(5, block_lengths, offsets, types, &csr_type);
-    MPI_Type_commit(&csr_type);
-
-    return csr_type;
-}*/
 int main(int argc, char** argv)
 {
   using namespace boost::program_options ;
@@ -107,54 +67,20 @@ int main(int argc, char** argv)
 
   Timer timer ;
   MatrixGenerator generator ;
-  
-  /*if(vm["eigen"].as<int>()==1)
-  {
-    typedef Eigen::SparseMatrix<double> MatrixType ;
-    typedef Eigen::VectorXd             VectorType ;
-    MatrixType matrix ;
-    if(vm.count("file"))
-    {
-      std::string file = vm["file"].as<std::string>() ;
-      generator.readFromFile(file,matrix) ;
-    }
-    else
-    {
-      int nx = vm["nx"].as<int>() ;
-      generator.genLaplacian(nx,matrix) ;
-    }
-
-    std::size_t nrows = matrix.rows();
-    VectorType x(nrows);
-
-    for(std::size_t i=0;i<nrows;++i)
-      x(i) = i+1 ;
-
-    VectorType y ;
-    {
-      Timer::Sentry sentry(timer,"EigenSpMV") ;
-       y = matrix*x ;
-    }
-
-    double normy = PPTP::norm2(y) ;
-    std::cout<<"||y||="<<normy<<std::endl ;
-  }
-  else
-  {*/
 
   std::size_t global_nrows;
   std::vector<double> x, y;
 
   CSRMatrix local_matrix;
 
-  //MPI_Datatype csr_type = createCSRRangeType();
-  //CSRData data;
+  // Step 3: Define sendcounts and displacements
+  std::vector<int> sendcounts(world_size, 0);
+  std::vector<int> displacements(world_size, 0);
 
   if(world_rank == 0)
   {
 
     CSRMatrix matrix;
-    std::size_t local_nrows;
 
     if(vm.count("file"))
     {
@@ -169,166 +95,60 @@ int main(int argc, char** argv)
         
     global_nrows = matrix.nrows();
     x.resize(global_nrows);
-    //printNonZeroElements(matrix);
 
     for(std::size_t i=0;i<global_nrows;++i)
       x[i] = i+1 ;
 
     // Step 5 : Zero Sending local matrix info
     Timer::Sentry sentry(timer,"MPISpMV") ;
-    int offset = 0;
+    // Calculate sendcounts and displacements
+    std::size_t remainder = global_nrows % world_size;
+    for (int i = 0; i < world_size; ++i)
     {
-      std::size_t remainder = global_nrows % world_size;
-      local_nrows = global_nrows / world_size + (world_rank < remainder ? 1:0);
-      offset += local_nrows;
-
-      for(std::size_t i = 1; i < world_size; ++i)
-      {
-        local_nrows = global_nrows / world_size + (i < remainder ? 1:0);
-
-        // Sending local_nrows
-        // MPI_Send(&local_nrows, 1, MPI_UNSIGNED_LONG, i, 0, MPI_COMM_WORLD);
-                  
-        local_matrix = matrix.extractSubmatrix(offset, offset + local_nrows);
-
-        int nrows = local_matrix.nrows();
-        int nnz = local_matrix.nnz();
-
-        // Calculate total size for the buffer
-        int total_size = 2 + (nrows + 1) + nnz + nnz; // Metadata + kcols + cols + values
-
-        // Create a buffer for contiguous data
-        std::vector<double> buffer(total_size);
-
-        // Pack metadata
-        buffer[0] = nrows;
-        buffer[1] = nnz;
-
-        // Pack kcols
-        std::copy(local_matrix.kcol(), local_matrix.kcol() + local_matrix.nrows()  + 1, buffer.begin() + 2);
-
-        // Pack cols (offset by 2 + (nrows + 1))
-        std::copy(local_matrix.cols(), local_matrix.cols() + local_matrix.nnz(), buffer.begin() + 2 + (local_matrix.nrows() + 1));
-
-        // Pack values (offset by 2 + (nrows + 1) + nnz)
-        std::copy(local_matrix.values(), local_matrix.values() + local_matrix.nnz(), buffer.begin() + 2 + (local_matrix.nrows() + 1) + local_matrix.nnz());
-
-        // Send the buffer
-        MPI_Send(buffer.data(), total_size, MPI_DOUBLE, i, 1, MPI_COMM_WORLD);
-
-        offset += local_nrows;
-      }
-            
-      // zero computing it's data
-      local_nrows = global_nrows / world_size + (world_rank < remainder ? 1:0);
-      local_matrix = matrix.extractSubmatrix(0, 0 + local_nrows);
+      sendcounts[i] = global_nrows / world_size + (i < remainder ? 1 : 0);
+      if (i > 0)
+        displacements[i] = displacements[i - 1] + sendcounts[i - 1];
     }
-    // --------------------
 
-    /*{
-    std::vector<double> y(global_nrows);
-      {
-        Timer::Sentry sentry(timer,"SpMV") ;
-        matrix.mult(x,y) ;
-      }
-      double normy = PPTP::norm2(y) ;
-      std::cout<<"||y||="<<normy<<std::endl ;
-    }*/
-
+    // Flatten the matrix into a 1D buffer for scattering
+    std::vector<double> flattened_matrix = matrix.flattenForScatter();
+    MPI_Scatterv(flattened_matrix.data(), sendcounts.data(), displacements.data(), MPI_DOUBLE,
+          nullptr, 0, MPI_DOUBLE, 0, MPI_COMM_WORLD);
   }
+  // --------------------
      
   std::cout << "Process " << world_rank + 1 << " in " << world_size <<std::endl;
-  // Step 4 : Zero Sending global matrix size and x and others Receiving 
-  {
-    // gloal_matrix_size
-    MPI_Bcast(&global_nrows, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
-    std::cout << "Global nrows " << global_nrows <<std::endl;
 
-    // vector x
-    x.resize(global_nrows);
-    MPI_Bcast(x.data(), global_nrows, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-    std::cout << "Vector of size " << x.size() <<std::endl;
-  }
+  // Step 4: Broadcast global_nrows and vector x
+  MPI_Bcast(&global_nrows, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
+  x.resize(global_nrows);
+  MPI_Bcast(x.data(), global_nrows, MPI_DOUBLE, 0, MPI_COMM_WORLD);
   // --------------------
 
-  // Step 6 : Receiving local matrix infos
-  if(world_rank != 0)
-  {
-    MPI_Status status;
+  // Step 5: Receive local matrix using MPI_Scatterv
+  int local_nrows = sendcounts[world_rank];
+  std::vector<double> local_data(local_nrows);
+  MPI_Scatterv(nullptr, sendcounts.data(), displacements.data(), MPI_DOUBLE,
+            local_data.data(), local_nrows, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-    // Receiving local_nrows
-    //MPI_Recv(&local_nrows, 1, MPI_UNSIGNED_LONG, 0, 0, MPI_COMM_WORLD, &status);
-    //std::cout << "Received local nrows " << local_nrows <<std::endl;
+  local_matrix.copyCSRMatrixFromData(local_data);
 
-    // Probe message size
-    MPI_Probe(0, 1, MPI_COMM_WORLD, &status);
-    int count;
-    MPI_Get_count(&status, MPI_DOUBLE, &count);
-
-    // Allocate buffer
-    std::vector<double> buffer(count);
-
-    // Receiving local_matrix_data
-    MPI_Recv(buffer.data(), count, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD, &status);
-      
-    local_matrix.copyCSRMatrixFromData(buffer);
-    std::cout << "Received local matrix data " << local_matrix.data().nrows <<std::endl;
-  } else {
-    std::cout << "Received local matrix data " << local_matrix.data().nrows <<std::endl;
-  }
-  // --------------------
-
-  //printNonZeroElements(local_matrix);
-
-  // Step 7 : Computing the local multiplication
+  // Step 6: Compute local multiplication
   std::vector<double> local_y(local_matrix.nrows());
-  {
-    local_matrix.mult(x,local_y);
-  }
+  local_matrix.mult(x, local_y);
 
-  /*std::cout << "Local y vector: \n";
-  for (std::size_t i = 0; i < local_y.size(); ++i) {
-    std::cout << local_y[i] << " ";
-  }
-  std::cout << std::endl;*/
-
-  // Gather the results back to process 0
+  // Step 7: Gather results back to process 0
   y.resize(global_nrows);
-
-  // Create sendcounts and displacements arrays for MPI_Gatherv
-  std::vector<int> sendcounts(world_size, 0);
-  std::vector<int> displacements(world_size, 0);
-
-  // Calculate sendcounts and displacements
-  int total_send_count = 0;
-  for (std::size_t i = 0; i < world_size; ++i) {
-      sendcounts[i] = (i < global_nrows % world_size) ? (global_nrows / world_size + 1) : (global_nrows / world_size);
-      if (i > 0) {
-          displacements[i] = displacements[i - 1] + sendcounts[i - 1];
-      }
-      total_send_count += sendcounts[i];
-  }
-
-  // Gather data to root (process 0)
-  MPI_Gatherv(local_y.data(), local_y.size(), MPI_DOUBLE, 
-              y.data(), sendcounts.data(), displacements.data(), 
-              MPI_DOUBLE, 0, MPI_COMM_WORLD);
+  MPI_Gatherv(local_y.data(), local_y.size(), MPI_DOUBLE,
+            y.data(), sendcounts.data(), displacements.data(),
+            MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
   if (world_rank == 0)
   {
     double normy2 = PPTP::norm2(y);
-    std::cout<<"||MPI - y||="<<normy2<<std::endl;
-
-    /*std::cout << "Gathered y vector: \n";
-    for (int i = 0; i < global_nrows; ++i) {
-      std::cout << y[i] << " ";
-    }
-    std::cout << std::endl;*/
+    std::cout << "||MPI - y||=" << normy2 << std::endl;
   }
 
-  //MPI_Type_free(&csr_type);
-
-  
   timer.printInfo();
 
   // step 2 : initialize (1) and finalize (2)

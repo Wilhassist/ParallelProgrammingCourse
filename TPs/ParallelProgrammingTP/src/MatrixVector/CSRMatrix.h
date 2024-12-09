@@ -163,6 +163,35 @@ class CSRMatrix
          // todo OPENMP
       }
     }
+
+    std::vector<double> flattenForScatter() const {
+      // Total size of the flattened buffer:
+      // Metadata (2) + kcol (nrows + 1) + cols (nnz) + values (nnz)
+      int metadata_size = 2;
+      int kcol_size = nrows() + 1;
+      int cols_size = nnz();
+      int values_size = nnz();
+      int total_size = metadata_size + kcol_size + cols_size + values_size;
+
+      // Create the buffer
+      std::vector<double> buffer(total_size);
+
+      // Pack metadata
+      buffer[0] = nrows();
+      buffer[1] = nnz();
+
+      // Pack kcol (offset by metadata_size)
+      std::copy(kcol(), kcol() + kcol_size, buffer.begin() + metadata_size);
+
+      // Pack cols (offset by metadata_size + kcol_size)
+      std::copy(cols(), cols() + cols_size, buffer.begin() + metadata_size + kcol_size);
+
+      // Pack values (offset by metadata_size + kcol_size + cols_size)
+      std::copy(values(), values() + values_size, buffer.begin() + metadata_size + kcol_size + cols_size);
+
+      return buffer;
+    }
+    
   private:
     // number of lines
     std::size_t         m_nrows = 0;
