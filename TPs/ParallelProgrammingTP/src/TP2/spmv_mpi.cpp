@@ -142,19 +142,19 @@ int main(int argc, char** argv)
   else
   {*/
 
-  std::size_t global_nrows;
-  std::vector<double> x, y, local_y;
-
-  CSRMatrix local_matrix;
-  std::size_t local_nrows;
-
-  std::size_t remainder;
-
   //MPI_Datatype csr_type = createCSRRangeType();
   //CSRData data;
 
   if(world_rank == 0)
   {
+
+    std::size_t global_nrows;
+    std::vector<double> x;
+
+    CSRMatrix local_matrix;
+    std::size_t local_nrows;
+
+    std::size_t remainder;
 
     CSRMatrix matrix;
 
@@ -237,6 +237,9 @@ int main(int argc, char** argv)
       std::cout<<"||y||="<<normy<<std::endl ;
     }*/
 
+  } else {
+    CSRMatrix local_matrix;
+    std::size_t local_nrows, global_nrows;
   }
      
   std::cout << "Process " << world_rank + 1 << " in " << world_size <<std::endl;
@@ -283,7 +286,8 @@ int main(int argc, char** argv)
   //printNonZeroElements(local_matrix);
 
   // Step 7 : Computing the local multiplication
-  local_y.resize(local_matrix.nrows());
+
+  std::vector<double> local_y(local_matrix.nrows());
   {
     local_matrix.mult(x,local_y);
   }
@@ -295,6 +299,7 @@ int main(int argc, char** argv)
   std::cout << std::endl;*/
 
   // Gather the results back to process 0
+  std::vector<double> y;
   y.resize(global_nrows);
 
 
