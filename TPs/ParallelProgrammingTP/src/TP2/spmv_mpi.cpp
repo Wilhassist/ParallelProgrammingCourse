@@ -153,8 +153,6 @@ int main(int argc, char** argv)
   //MPI_Datatype csr_type = createCSRRangeType();
   //CSRData data;
 
-  std::cout << "Process " << world_rank + 1 << " in " << world_size <<std::endl;
-
   if(world_rank == 0)
   {
 
@@ -241,7 +239,7 @@ int main(int argc, char** argv)
 
   }
      
-
+  std::cout << "Process " << world_rank + 1 << " in " << world_size <<std::endl;
   // Step 4 : Zero Sending global matrix size and x and others Receiving 
   {
     // gloal_matrix_size
