@@ -142,21 +142,19 @@ int main(int argc, char** argv)
   else
   {*/
 
+  std::size_t global_nrows;
+  std::vector<double> x, y;
+
+  CSRMatrix local_matrix;
+
   //MPI_Datatype csr_type = createCSRRangeType();
   //CSRData data;
 
   if(world_rank == 0)
   {
 
-    std::size_t global_nrows;
-    std::vector<double> x;
-
-    CSRMatrix local_matrix;
-    std::size_t local_nrows;
-
-    std::size_t remainder;
-
     CSRMatrix matrix;
+    std::size_t local_nrows;
 
     if(vm.count("file"))
     {
@@ -180,7 +178,7 @@ int main(int argc, char** argv)
     Timer::Sentry sentry(timer,"MPISpMV") ;
     int offset = 0;
     {
-      remainder = global_nrows % world_size;
+      std::size_t remainder = global_nrows % world_size;
       local_nrows = global_nrows / world_size + (world_rank < remainder ? 1:0);
       offset += local_nrows;
 
@@ -237,9 +235,6 @@ int main(int argc, char** argv)
       std::cout<<"||y||="<<normy<<std::endl ;
     }*/
 
-  } else {
-    CSRMatrix local_matrix;
-    std::size_t local_nrows, global_nrows;
   }
      
   std::cout << "Process " << world_rank + 1 << " in " << world_size <<std::endl;
@@ -286,22 +281,19 @@ int main(int argc, char** argv)
   //printNonZeroElements(local_matrix);
 
   // Step 7 : Computing the local multiplication
-
   std::vector<double> local_y(local_matrix.nrows());
   {
     local_matrix.mult(x,local_y);
   }
 
-  std::cout << "Local y vector: \n";
-  /*for (std::size_t i = 0; i < local_y.size(); ++i) {
+  /*std::cout << "Local y vector: \n";
+  for (std::size_t i = 0; i < local_y.size(); ++i) {
     std::cout << local_y[i] << " ";
   }
   std::cout << std::endl;*/
 
   // Gather the results back to process 0
-  std::vector<double> y;
   y.resize(global_nrows);
-
 
   // Create sendcounts and displacements arrays for MPI_Gatherv
   std::vector<int> sendcounts(world_size, 0);
@@ -310,7 +302,7 @@ int main(int argc, char** argv)
   // Calculate sendcounts and displacements
   int total_send_count = 0;
   for (std::size_t i = 0; i < world_size; ++i) {
-      sendcounts[i] = (i < remainder) ? (global_nrows / world_size + 1) : (global_nrows / world_size);
+      sendcounts[i] = (i < global_nrows % world_size) ? (global_nrows / world_size + 1) : (global_nrows / world_size);
       if (i > 0) {
           displacements[i] = displacements[i - 1] + sendcounts[i - 1];
       }
