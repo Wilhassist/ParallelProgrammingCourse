@@ -70,7 +70,6 @@ void printNonZeroElements(const PPTP::CSRMatrix& matrix) {
 
     return csr_type;
 }*/
-
 int main(int argc, char** argv)
 {
   using namespace boost::program_options ;
@@ -180,6 +179,7 @@ int main(int argc, char** argv)
       x[i] = i+1 ;
 
     // Step 5 : Zero Sending local matrix info
+    Timer::Sentry sentry(timer,"MPISpMV") ;
     int offset = 0;
     {
       remainder = global_nrows % world_size;
@@ -291,10 +291,10 @@ int main(int argc, char** argv)
   }
 
   std::cout << "Local y vector: \n";
-  for (std::size_t i = 0; i < local_y.size(); ++i) {
+  /*for (std::size_t i = 0; i < local_y.size(); ++i) {
     std::cout << local_y[i] << " ";
   }
-  std::cout << std::endl;
+  std::cout << std::endl;*/
 
   // Gather the results back to process 0
   y.resize(global_nrows);
@@ -324,11 +324,11 @@ int main(int argc, char** argv)
     double normy2 = PPTP::norm2(y);
     std::cout<<"||MPI - y||="<<normy2<<std::endl;
 
-    std::cout << "Gathered y vector: \n";
+    /*std::cout << "Gathered y vector: \n";
     for (int i = 0; i < global_nrows; ++i) {
       std::cout << y[i] << " ";
     }
-    std::cout << std::endl;
+    std::cout << std::endl;*/
   }
 
   //MPI_Type_free(&csr_type);
