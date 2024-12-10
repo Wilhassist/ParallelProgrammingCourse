@@ -31,8 +31,8 @@
 #include "Utils/Timer.h"
 
 void scatterCSRMatrix(
-    const CSRData& full_data, 
-    CSRData& local_data, 
+    const PPTP::CSRData& full_data, 
+    PPTP::CSRData& local_data, 
     int rank, int size, 
     MPI_Comm comm
 ) {
