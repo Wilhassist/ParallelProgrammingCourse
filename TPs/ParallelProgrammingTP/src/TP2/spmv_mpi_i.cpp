@@ -51,18 +51,6 @@ int main(int argc, char** argv)
       return 1;
   }
 
-  // step 2 : initialize (1) and finalize (2)
-  MPI_Init(&argc, &argv); // (1)
-  // --------------------
-
-  // step 3 : Initialize Variables
-  int world_size;
-  int world_rank;
-
-  MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-  MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
-  // --------------------
-
   using namespace PPTP ;
 
   Timer timer ;
@@ -130,13 +118,19 @@ int main(int argc, char** argv)
     double normy = PPTP::norm2(y) ;
     std::cout<<"||y||="<<normy<<std::endl ;
 
-    {
-      Timer::Sentry sentry(timer,"OMPSpMV") ;
-      matrix.mult(x,y2) ;
-    }
-    double normy2 = PPTP::norm2(y2) ;
-    std::cout<<"||y2||="<<normy2<<std::endl ;
+    MPI_Init(&argc, &argv); 
+
+    int world_size;
+    int world_rank;
+
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+
+    std::cout << "Process " << world_rank + 1 << " in " << world_size <<std::endl;
+
+    MPI_Finalize(&argc, &argv);
   }
+
   timer.printInfo();
   return 0 ;
 }
