@@ -128,7 +128,7 @@ int main(int argc, char** argv)
 
     std::cout << "Process " << world_rank + 1 << " in " << world_size <<std::endl;
 
-    MPI_Finalize(&argc, &argv);
+    MPI_Finalize();
   }
 
   timer.printInfo();
