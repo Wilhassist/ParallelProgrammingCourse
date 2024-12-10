@@ -23,6 +23,8 @@
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
 #include <Eigen/LU>
+#include <numeric>
+
 
 #include "MatrixVector/CSRMatrix.h"
 #include "MatrixVector/LinearAlgebra.h"
