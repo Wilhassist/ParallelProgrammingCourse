@@ -39,7 +39,7 @@ void scatterCSRMatrix(
     MPI_Comm comm
 ) {
     // Partition rows among processes
-    std::size_t local_nrows = full_data.nrows / size;
+    std::size_t local_nrows = full_data.nrows + size - 1 / size;
     std::size_t remainder = full_data.nrows % size;
 
     std::vector<int> row_counts(size, local_nrows);
