@@ -58,14 +58,16 @@ void scatterCSRMatrix(
         row_displs.data(), 
         MPI_INT, 
         local_data.kcol.data(), 
-        row_counts[rank], 
+        row_counts[rank] + 1, 
         MPI_INT, 
         0, comm
     );
 
     // Adjust local row pointers
-    int row_offset = local_data.kcol[0];
-    for (int& k : local_data.kcol) k -= row_offset;
+    int row_offset = full_data.kcol[row_displs[rank]];
+    for (int& k : local_data.kcol) {
+        k -= row_offset;
+    }
 
     // Calculate non-zero elements for each process
     std::vector<int> nnz_counts(size, 0);
@@ -86,7 +88,6 @@ void scatterCSRMatrix(
     // Scatter columns and values
     local_data.cols.resize(nnz_counts[rank]);
     local_data.values.resize(nnz_counts[rank]);
-
 
     MPI_Scatterv(
         full_data.cols.data(), 
