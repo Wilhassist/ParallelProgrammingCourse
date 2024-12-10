@@ -285,13 +285,6 @@ int main(int argc, char** argv)
     {
       local_matrix.mult(x,local_y);
     }
-
-    std::cout << "Local y vector: \n";
-    for (std::size_t i = 0; i < local_y.size(); ++i) {
-      std::cout << local_y[i] << " ";
-    }
-    std::cout << std::endl;
-
     // Gather the results back to process 0
     y.resize(global_nrows);
 
@@ -319,12 +312,6 @@ int main(int argc, char** argv)
     {
       double normy2 = PPTP::norm2(y);
       std::cout<<"||MPI - y||="<<normy2<<std::endl;
-
-      std::cout << "Gathered y vector: \n";
-      for (int i = 0; i < global_nrows; ++i) {
-        std::cout << y[i] << " ";
-      }
-      std::cout << std::endl;
     }
 
     //MPI_Type_free(&csr_type);
