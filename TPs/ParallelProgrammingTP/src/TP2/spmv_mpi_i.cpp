@@ -39,7 +39,7 @@ void scatterCSRMatrix(
     MPI_Comm comm
 ) {
     // Partition rows among processes
-    std::size_t local_nrows = full_data.nrows + size - 1 / size;
+    std::size_t local_nrows = full_data.nrows / size;
     std::size_t remainder = full_data.nrows % size;
 
     std::vector<int> row_counts(size, local_nrows);
@@ -235,10 +235,14 @@ int main(int argc, char** argv)
 
     scatterCSRMatrix(full_data, local_data, world_rank, world_size, MPI_COMM_WORLD);
     
+
     // Verify results
     std::cout << "Rank " << world_rank << " local_kcol: ";
-    std::cout << local_data.kcol.size()  << " ";
-    std::cout << "\n";
+    for (const auto& k : local_data.kcol) {
+        std::cout << k << " ";
+    }
+    std::cout << std::endl;
+    //std::cout << "\n";
 
     std::cout << "Rank " << world_rank << " local_cols: ";
     std::cout << local_data.cols.size() << " ";
