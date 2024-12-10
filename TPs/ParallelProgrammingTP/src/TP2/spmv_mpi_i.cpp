@@ -51,6 +51,14 @@ int main(int argc, char** argv)
       return 1;
   }
 
+  MPI_Init(&argc, &argv); 
+
+  int world_size;
+  int world_rank;
+
+  MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+
   using namespace PPTP ;
 
   Timer timer ;
@@ -89,48 +97,45 @@ int main(int argc, char** argv)
   }
   else
   {
-    CSRMatrix matrix ;
-    if(vm.count("file"))
+    if(world_rank == 0)
     {
-      std::string file = vm["file"].as<std::string>() ;
-      generator.readFromFile(file,matrix) ;
+      CSRMatrix matrix ;
+      if(vm.count("file"))
+      {
+        std::string file = vm["file"].as<std::string>() ;
+        generator.readFromFile(file,matrix) ;
+      }
+      else
+      {
+        int nx = vm["nx"].as<int>() ;
+        generator.genLaplacian(nx,matrix) ;
+      }
+
+
+      std::size_t nrows = matrix.nrows();
+      std::vector<double> x,y,y2 ;
+      x.resize(nrows) ;
+      y.resize(nrows) ;
+      y2.resize(nrows) ;
+
+      for(std::size_t i=0;i<nrows;++i)
+        x[i] = i+1 ;
+      {
+        {
+          Timer::Sentry sentry(timer,"SpMV") ;
+          matrix.mult(x,y) ;
+        }
+        double normy = PPTP::norm2(y) ;
+        std::cout<<"||y||="<<normy<<std::endl ;
+      }
     }
-    else
-    {
-      int nx = vm["nx"].as<int>() ;
-      generator.genLaplacian(nx,matrix) ;
-    }
-
-
-    std::size_t nrows = matrix.nrows();
-    std::vector<double> x,y,y2 ;
-    x.resize(nrows) ;
-    y.resize(nrows) ;
-    y2.resize(nrows) ;
-
-    for(std::size_t i=0;i<nrows;++i)
-      x[i] = i+1 ;
-
-    {
-      Timer::Sentry sentry(timer,"SpMV") ;
-      matrix.mult(x,y) ;
-    }
-    double normy = PPTP::norm2(y) ;
-    std::cout<<"||y||="<<normy<<std::endl ;
-
-    MPI_Init(&argc, &argv); 
-
-    int world_size;
-    int world_rank;
-
-    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
     std::cout << "Process " << world_rank + 1 << " in " << world_size <<std::endl;
 
-    MPI_Finalize();
+    
   }
 
+  MPI_Finalize();
   timer.printInfo();
   return 0 ;
 }
