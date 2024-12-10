@@ -50,7 +50,7 @@ void scatterCSRMatrix(
 
     // Prepare local row pointers
     local_data.nrows = row_counts[rank];
-    local_data.kcol.resize(local_data.nrows);
+    local_data.kcol.resize(local_data.nrows + 1);
 
     MPI_Scatterv(
         full_data.kcol.data(), 
@@ -58,7 +58,7 @@ void scatterCSRMatrix(
         row_displs.data(), 
         MPI_INT, 
         local_data.kcol.data(), 
-        row_counts[rank], 
+        row_counts[rank] + 1, 
         MPI_INT, 
         0, comm
     );
@@ -77,7 +77,7 @@ void scatterCSRMatrix(
 
     for (int i = 0; i < size; ++i) {
     std::cout << "Process " << i << ": "
-              << "kcol count = " << row_counts[i] << ", "
+              << "kcol count = " << row_counts[i] + 1 << ", "
               << "cols count = " << nnz_counts[i] << ", "
               << "values count = " << nnz_counts[i] << std::endl;
     }
