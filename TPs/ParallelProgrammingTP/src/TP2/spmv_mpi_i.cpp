@@ -30,6 +30,80 @@
 
 #include "Utils/Timer.h"
 
+void scatterCSRMatrix(
+    const CSRData& full_data, 
+    CSRData& local_data, 
+    int rank, int size, 
+    MPI_Comm comm
+) {
+    // Partition rows among processes
+    std::size_t local_nrows = full_data.nrows / size;
+    std::size_t remainder = full_data.nrows % size;
+
+    std::vector<int> row_counts(size, local_nrows);
+    for (int i = 0; i < remainder; ++i) row_counts[i]++;  // Handle extra rows
+
+    std::vector<int> row_displs(size, 0);
+    std::partial_sum(row_counts.begin(), row_counts.end() - 1, row_displs.begin() + 1);
+
+    // Prepare local row pointers
+    local_data.nrows = row_counts[rank];
+    local_data.kcol.resize(local_data.nrows + 1);
+
+    MPI_Scatterv(
+        full_data.kcol.data(), 
+        row_counts.data(), 
+        row_displs.data(), 
+        MPI_INT, 
+        local_data.kcol.data(), 
+        local_data.nrows + 1, 
+        MPI_INT, 
+        0, comm
+    );
+
+    // Adjust local row pointers
+    int row_offset = local_data.kcol[0];
+    for (int& k : local_data.kcol) k -= row_offset;
+
+    // Calculate non-zero elements for each process
+    std::vector<int> nnz_counts(size, 0);
+    for (int i = 0; i < size; ++i) {
+        nnz_counts[i] = full_data.kcol[row_displs[i] + row_counts[i]] - full_data.kcol[row_displs[i]];
+    }
+
+    std::vector<int> nnz_displs(size, 0);
+    std::partial_sum(nnz_counts.begin(), nnz_counts.end() - 1, nnz_displs.begin() + 1);
+
+    // Scatter columns and values
+    local_data.cols.resize(nnz_counts[rank]);
+    local_data.values.resize(nnz_counts[rank]);
+
+    MPI_Scatterv(
+        full_data.cols.data(), 
+        nnz_counts.data(), 
+        nnz_displs.data(), 
+        MPI_INT, 
+        local_data.cols.data(), 
+        nnz_counts[rank], 
+        MPI_INT, 
+        0, comm
+    );
+
+    MPI_Scatterv(
+        full_data.values.data(), 
+        nnz_counts.data(), 
+        nnz_displs.data(), 
+        MPI_DOUBLE, 
+        local_data.values.data(), 
+        nnz_counts[rank], 
+        MPI_DOUBLE, 
+        0, comm
+    );
+
+    // Update local nnz count
+    local_data.nnz = nnz_counts[rank];
+}
+
 int main(int argc, char** argv)
 {
   using namespace boost::program_options ;
@@ -63,8 +137,6 @@ int main(int argc, char** argv)
 
   Timer timer ;
   MatrixGenerator generator ;
-
-  Timer::Sentry sentry(timer,"MPI_SpMV") ;
   if(vm["eigen"].as<int>()==1)
   {
     typedef Eigen::SparseMatrix<double> MatrixType ;
@@ -100,8 +172,9 @@ int main(int argc, char** argv)
   else
   {
 
+    CSRData full_data, local_data;
     std::size_t global_nrows;
-    std::vector<double> x;
+    std::vector<double> x, local_y;
 
     if(world_rank == 0)
     {
@@ -119,44 +192,56 @@ int main(int argc, char** argv)
 
 
       global_nrows = matrix.nrows();
-      std::vector<double> y, local_y ;
-      x.resize(global_nrows) ;
-      y.resize(global_nrows) ;
+      std::vector<double> y;
+      x.resize(global_nrows);
+      y.resize(global_nrows);
 
       for(std::size_t i=0;i<global_nrows;++i)
         x[i] = i+1 ;
-      {
-        {
-          Timer::Sentry sentry(timer,"SpMV") ;
-          matrix.mult(x,y) ;
-        }
-        double normy = PPTP::norm2(y) ;
-        std::cout<<"||y||="<<normy<<std::endl ;
-      }
 
+      {
+        Timer::Sentry sentry(timer,"SpMV") ;
+        matrix.mult(x,y) ;
+      }
+      double normy = PPTP::norm2(y) ;
+      std::cout<<"||y||="<<normy<<std::endl ;
+
+      Timer::Sentry sentry(timer,"MPI_SpMV") ;
       
-      {
+      full_data = matrix.data();
 
-      }
     }
 
-
+    
     {
       // gloal_matrix_size
       MPI_Bcast(&global_nrows, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
-      std::cout << "Global nrows " << global_nrows <<std::endl;
 
       // vector x
       x.resize(global_nrows);
       MPI_Bcast(x.data(), global_nrows, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-      std::cout << "Vector of size " << x.size() <<std::endl;
     }
 
-    std::cout << "Process " << world_rank + 1 << " in " << world_size <<std::endl;
+    scatterCSRMatrix(full_data, local_data, world_rank, world_size, MPI_COMM_WORLD);
+    
+    // Verify results
+    std::cout << "Rank " << world_rank << " local_kcol: ";
+    std::cout << local_data.kcol.size()  << " ";
+    std::cout << "\n";
+
+    std::cout << "Rank " << world_rank << " local_cols: ";
+    std::cout << local_data.cols.size() << " ";
+    std::cout << "\n";
+
+    std::cout << "Rank " << world_rank << " local_values: ";
+    std::cout << local_data.values.size() << " ";
+    std::cout << "\n";
+
   }
 
 
-  timer.printInfo();
+  if(world_rank == 0)
+    timer.printInfo();
 
   MPI_Finalize();
   return 0 ;

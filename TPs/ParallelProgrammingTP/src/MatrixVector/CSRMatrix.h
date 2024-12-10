@@ -17,6 +17,8 @@ struct CSRData {
     std::vector<double> values; // Pointer to the range of m_values
     std::size_t nrows;
     std::size_t nnz;
+
+    CSRData() : nrows(0), nnz(0) {}
 };
 
 class CSRMatrix
