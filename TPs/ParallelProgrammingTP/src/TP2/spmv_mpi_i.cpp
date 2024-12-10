@@ -52,8 +52,8 @@ void scatterCSRMatrix(
     local_data.nrows = row_counts[rank];
     local_data.kcol.resize(local_data.nrows + 1);
 
-    std::cout << "Rank " << world_rank << " row_counts: "<< row_counts[rank]<<std::endl ;
-    std::cout << "Rank " << world_rank << " row_displs: "<< row_displs[rank]<<std::endl;
+    std::cout << "Rank " << rank << " row_counts: "<< row_counts[rank]<<std::endl ;
+    std::cout << "Rank " << rank << " row_displs: "<< row_displs[rank]<<std::endl;
 
 
     MPI_Scatterv(
