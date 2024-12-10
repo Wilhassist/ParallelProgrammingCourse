@@ -19,6 +19,10 @@ struct CSRData {
     std::size_t nnz;
 
     CSRData() : nrows(0), nnz(0) {}
+    CSRData(std::vector<int> n_kcol
+    , std::vector<int> n_cols
+    , std::vector<double> n_values
+    ,std::size_t n_nrows, std::size_t n_nnz) : nrows(n_nrows), nnz(n_nnz), kcol(n_kcol), cols(n_cols), values(n_values) {}
 };
 
 class CSRMatrix
