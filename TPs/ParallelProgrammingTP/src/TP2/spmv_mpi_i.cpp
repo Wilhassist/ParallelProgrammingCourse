@@ -82,7 +82,7 @@ void scatterCSRMatrix(
               << "values count = " << nnz_counts[i] << std::endl;
     }
 
-    /*std::vector<int> nnz_displs(size, 0);
+    std::vector<int> nnz_displs(size, 0);
     std::partial_sum(nnz_counts.begin(), nnz_counts.end() - 1, nnz_displs.begin() + 1);
 
     // Scatter columns and values
@@ -112,7 +112,7 @@ void scatterCSRMatrix(
     );
 
     // Update local nnz count
-    local_data.nnz = nnz_counts[rank];*/
+    local_data.nnz = nnz_counts[rank];
 }
 
 int main(int argc, char** argv)
@@ -226,11 +226,11 @@ int main(int argc, char** argv)
     
     {
       // gloal_matrix_size
-      MPI_Bcast(&global_nrows, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
+      //MPI_Bcast(&global_nrows, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
 
       // vector x
-      x.resize(global_nrows);
-      MPI_Bcast(x.data(), global_nrows, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+      //x.resize(global_nrows);
+      //MPI_Bcast(x.data(), global_nrows, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     }
 
     scatterCSRMatrix(full_data, local_data, world_rank, world_size, MPI_COMM_WORLD);
