@@ -97,6 +97,10 @@ int main(int argc, char** argv)
   }
   else
   {
+
+    std::size_t global_nrows;
+    std::vector<double> x;
+
     if(world_rank == 0)
     {
       CSRMatrix matrix ;
@@ -112,13 +116,12 @@ int main(int argc, char** argv)
       }
 
 
-      std::size_t nrows = matrix.nrows();
-      std::vector<double> x,y,y2 ;
-      x.resize(nrows) ;
-      y.resize(nrows) ;
-      y2.resize(nrows) ;
+      global_nrows = matrix.nrows();
+      std::vector<double> y, local_y ;
+      x.resize(global_nrows) ;
+      y.resize(global_nrows) ;
 
-      for(std::size_t i=0;i<nrows;++i)
+      for(std::size_t i=0;i<global_nrows;++i)
         x[i] = i+1 ;
       {
         {
@@ -130,11 +133,24 @@ int main(int argc, char** argv)
       }
 
       Timer::Sentry sentry(timer,"MPI_SpMV") ;
+      {
+
+      }
+    }
+
+
+    {
+      // gloal_matrix_size
+      MPI_Bcast(&global_nrows, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
+      std::cout << "Global nrows " << global_nrows <<std::endl;
+
+      // vector x
+      x.resize(global_nrows);
+      MPI_Bcast(x.data(), global_nrows, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+      std::cout << "Vector of size " << x.size() <<std::endl;
     }
 
     std::cout << "Process " << world_rank + 1 << " in " << world_size <<std::endl;
-
-    
   }
 
 
