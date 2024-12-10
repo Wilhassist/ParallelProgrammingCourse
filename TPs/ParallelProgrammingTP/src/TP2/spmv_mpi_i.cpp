@@ -137,7 +137,10 @@ int main(int argc, char** argv)
     
   }
 
+
+  if(world_rank == 0)
+    timer.printInfo();
+
   MPI_Finalize();
-  timer.printInfo();
   return 0 ;
 }
