@@ -63,6 +63,8 @@ int main(int argc, char** argv)
 
   Timer timer ;
   MatrixGenerator generator ;
+
+  Timer::Sentry sentry(timer,"MPI_SpMV") ;
   if(vm["eigen"].as<int>()==1)
   {
     typedef Eigen::SparseMatrix<double> MatrixType ;
@@ -132,7 +134,7 @@ int main(int argc, char** argv)
         std::cout<<"||y||="<<normy<<std::endl ;
       }
 
-      Timer::Sentry sentry(timer,"MPI_SpMV") ;
+      
       {
 
       }
@@ -154,8 +156,7 @@ int main(int argc, char** argv)
   }
 
 
-  if(world_rank == 0)
-    timer.printInfo();
+  timer.printInfo();
 
   MPI_Finalize();
   return 0 ;
