@@ -58,7 +58,7 @@ void scatterCSRMatrix(
         row_displs.data(), 
         MPI_INT, 
         local_data.kcol.data(), 
-        row_counts[rank] + 1, 
+        row_counts[rank], 
         MPI_INT, 
         0, comm
     );
