@@ -81,7 +81,7 @@ void scatterCSRMatrix(
                 row_offsets[i] = full_data.kcol[row_displs[i + 1]];
             } 
         }
-        row_offsets[-1] = full_data.kcol[-1];
+        row_offsets[size - 1] = full_data.kcol[size - 1];
     }
 
     int local_row_offset = 0;
