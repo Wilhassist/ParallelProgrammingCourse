@@ -78,9 +78,9 @@ void scatterCSRMatrix(
     if (rank == 0) {
         for (int i = 0; i < size; ++i) {
             if (row_displs[i] < full_data.kcol.size()) {
-                row_offsets[i] = full_data.kcol[row_displs[i]];
+                row_offsets[i] = full_data.kcol[row_displs[i + 1]];
             } else {
-                row_offsets[i] = 0; // Fallback in case of invalid displacement
+                row_offsets[i] = full_data.kcol[-1]; // Fallback in case of invalid displacement
             }
         }
     }
@@ -95,6 +95,7 @@ void scatterCSRMatrix(
         }
         std::cout << std::endl;
         int initial = local_data.kcol[0];
+        local_data.kcol[-1] = local_row_offset;
         for (int& k : local_data.kcol) k -= initial;
     }
 
