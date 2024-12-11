@@ -77,11 +77,10 @@ void scatterCSRMatrix(
     // Compute offsets on rank 0
     if (rank == 0) {
         for (int i = 0; i < size - 1; ++i) {
-            if (row_displs[i + 1] < full_data.kcol.size()) {
+            if (row_displs[i] < full_data.kcol.size()) {
                 row_offsets[i] = full_data.kcol[row_displs[i + 1]];
             } 
         }
-
         row_offsets[-1] = full_data.kcol[-1];
     }
 
