@@ -97,23 +97,24 @@ void scatterCSRMatrix(
     std::partial_sum(nnz_counts.begin(), nnz_counts.end() - 1, nnz_displs.begin() + 1);
 
     // Assuming full_data.cols and full_data.values are of the same size
-    std::vector<int> combined_cols_values(nnz_counts[size - 1] * 2);  // Enough space for both cols and values
+    int total_nnz = full_data.cols.size();  // or use the length of full_data.cols
+    std::vector<int> combined_cols_values(total_nnz * 2);  // Enough space for both cols and values
 
     // Pack cols and values into the combined buffer (only on rank 0)
     if (rank == 0) {
-        for (int i = 0; i < nnz_counts[size - 1]; ++i) {
+        for (int i = 0; i < total_nnz; ++i) {
             combined_cols_values[i] = full_data.cols[i];       // Pack cols
-            combined_cols_values[i + nnz_counts[size - 1]] = full_data.values[i];  // Pack values
+            combined_cols_values[i + total_nnz] = full_data.values[i];  // Pack values
         }
     }
-    std::vector<int> combined_buffer_2(nnz_counts[rank] * 2);  // For each process, 2 * nnz_counts[rank] space is needed (cols + values)
+    std::vector<int> combined_buffer(nnz_counts[rank] * 2);  // For each process, 2 * nnz_counts[rank] space is needed (cols + values)
 
     MPI_Scatterv(
         combined_cols_values.data(),            // Scatter the combined buffer
         nnz_counts.data(),                      // Counts of elements to send
         nnz_displs.data(),                      // Displacements
         MPI_BYTE,                               // Use MPI_BYTE to handle arbitrary types
-        combined_buffer_2.data(),                 // Local buffer to store scattered data
+        combined_buffer.data(),                 // Local buffer to store scattered data
         nnz_counts[rank] * 2,                   // Number of elements to receive (cols + values)
         MPI_BYTE,                               // Data type
         0,                                      // Root process
@@ -126,8 +127,8 @@ void scatterCSRMatrix(
     local_data.values.resize(nnz_counts[rank]);
 
     for (int i = 0; i < nnz_counts[rank]; ++i) {
-        local_data.cols[i] = combined_buffer_2[i];  // First half of combined buffer for cols
-        local_data.values[i] = combined_buffer_2[i + nnz_counts[rank]];  // Second half for values
+        local_data.cols[i] = combined_buffer[i];  // First half of combined buffer for cols
+        local_data.values[i] = combined_buffer[i + nnz_counts[rank]];  // Second half for values
     }
 
 
