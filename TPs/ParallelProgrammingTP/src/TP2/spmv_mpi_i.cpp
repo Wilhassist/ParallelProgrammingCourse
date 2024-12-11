@@ -216,7 +216,7 @@ int main(int argc, char** argv)
     CSRMatrix local_matrix;
     CSRData full_data, local_data;
     std::size_t global_nrows;
-    std::vector<double> x, local_y;
+    std::vector<double> x;
 
     if(world_rank == 0)
     {
