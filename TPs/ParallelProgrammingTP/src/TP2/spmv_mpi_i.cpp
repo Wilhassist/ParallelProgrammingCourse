@@ -65,7 +65,7 @@ void scatterCSRMatrix(
     if (rank == 0) {
       // Root process sends data to each process
       for (int i = 0; i < size; ++i) {
-          int send_count = row_counts[i] + 1; // Number of elements to send
+          int send_count = row_counts[i + 1] + 1; // Number of elements to send
 
           std::cout << i << " + " << send_count << std::endl;
           MPI_Send(full_data.kcol.data() + row_displs[i], send_count, MPI_INT, i, 0, comm);
