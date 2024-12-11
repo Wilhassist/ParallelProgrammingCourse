@@ -49,7 +49,7 @@ void scatterCSRMatrix(
 
         std::fill(row_counts.begin(), row_counts.end(), local_nrows);
         for (int i = 0; i < remainder; ++i) row_counts[i]++;
-        std::partial_sum(row_counts.begin(), row_counts.end(), row_displs.begin());
+        std::partial_sum(row_counts.begin(), row_counts.end(), row_displs.begin() + 1);
     }
 
     // Broadcast counts and displacements
