@@ -64,7 +64,7 @@ void scatterCSRMatrix(
     local_data.nrows = row_counts[rank];
     local_data.kcol.resize(local_data.nrows + 1);
 
-    if (rank == 0) {
+    /*if (rank == 0) {
       // Root process sends data to each process
       for (int i = 0; i < size; ++i) {
           int send_count = row_counts[i] + 1; // Number of elements to send
@@ -78,9 +78,9 @@ void scatterCSRMatrix(
       std::cout << "rank " << rank << " + " << recv_count << std::endl;
       
       MPI_Recv(local_data.kcol.data(), recv_count, MPI_INT, 0, 0, comm, MPI_STATUS_IGNORE);
-    }
+    }*/
 
-    /*MPI_Scatterv(
+    MPI_Scatterv(
         full_data.kcol.data(), 
         row_counts.data(), 
         row_displs.data(), 
@@ -110,7 +110,7 @@ void scatterCSRMatrix(
               << "values count = " << nnz_counts[i] << std::endl;
     }
 
-    std::vector<int> nnz_displs(size, 0);
+    /*std::vector<int> nnz_displs(size, 0);
     std::partial_sum(nnz_counts.begin(), nnz_counts.end() - 1, nnz_displs.begin() + 1);
 
     // Scatter columns and values
