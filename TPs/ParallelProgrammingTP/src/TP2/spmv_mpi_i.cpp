@@ -88,14 +88,6 @@ void scatterCSRMatrix(
         0, comm
     );
 
-    if (rank == 0) {
-      std::cout << "local kcol: ";
-      for (const auto& val : local_data.kcol) {
-          std::cout << val << " ";
-      }
-      std::cout << std::endl;
-    }
-
     // Adjust row pointers
     std::vector<int> row_offsets(size, 0);
 
@@ -116,6 +108,12 @@ void scatterCSRMatrix(
     if (!local_data.kcol.empty()) {
         for (int& k : local_data.kcol) k -= local_row_offset;
     }
+
+    std::cout << "local kcol: ";
+    for (const auto& val : local_data.kcol) {
+      std::cout << val << " ";
+    }
+    std::cout << std::endl;
 
     // Calculate nnz counts
     std::vector<int> nnz_counts(size, 0);
