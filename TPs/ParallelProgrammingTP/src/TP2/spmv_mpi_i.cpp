@@ -49,7 +49,7 @@ void scatterCSRMatrix(
 
         std::fill(row_counts.begin(), row_counts.end(), local_nrows);
         for (int i = 0; i < remainder; ++i) row_counts[i]++;
-        std::partial_sum(row_counts.begin(), row_counts.end() - 1, row_displs.begin() + 1);
+        std::partial_sum(row_counts.begin(), row_counts.end(), row_displs.begin() + 1);
     }
 
     // Broadcast counts and displacements
@@ -79,11 +79,11 @@ void scatterCSRMatrix(
     
     MPI_Scatterv(
         full_data.kcol.data(), 
-        row_counts.data() + 1, 
-        row_displs.data(), 
+        row_counts.data(), 
+        row_displs.data() , 
         MPI_INT, 
         local_data.kcol.data(), 
-        row_counts[rank] + 1,  
+        row_counts[rank],  
         MPI_INT, 
         0, comm
     );
