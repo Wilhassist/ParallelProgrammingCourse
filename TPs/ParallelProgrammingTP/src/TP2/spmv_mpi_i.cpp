@@ -88,11 +88,6 @@ void scatterCSRMatrix(
     MPI_Scatter(row_offsets.data(), 1, MPI_INT, &local_row_offset, 1, MPI_INT, 0, comm);
 
     if (!local_data.kcol.empty()) {
-        std::cout << "local kcol: ";
-        for (const auto& val : local_data.kcol) {
-          std::cout << val << " ";
-        }
-        std::cout << std::endl;
         int initial = local_data.kcol[0];
         local_data.kcol[row_counts[rank]] = local_row_offset;
         for (int& k : local_data.kcol) k -= initial;
