@@ -43,44 +43,42 @@ void scatterCSRMatrix(
     std::vector<int> nnz_counts(size, 0);
     int total_nnz, total_size;
 
-    int data_count = 3 * size + 2; // 3 arrays with 'size' elements each
+    // Metadata buffer
+    int data_count = 2 + 3 * size;  // total_nnz, total_size, row_counts, row_displs, nnz_counts
     std::vector<int> combined_buffer(data_count);
+
     if (rank == 0) {
-      // Partition rows
-      local_nrows = full_data.nrows / size;
-      std::size_t remainder = full_data.nrows % size;
+        // Partition rows
+        local_nrows = full_data.nrows / size;
+        std::size_t remainder = full_data.nrows % size;
 
-      std::fill(row_counts.begin(), row_counts.end(), local_nrows);
-      for (int i = 0; i < remainder; ++i) row_counts[i]++;
-      std::partial_sum(row_counts.begin(), row_counts.end(), row_displs.begin() + 1);
+        std::fill(row_counts.begin(), row_counts.end(), local_nrows);
+        for (int i = 0; i < remainder; ++i) row_counts[i]++;
+        std::partial_sum(row_counts.begin(), row_counts.end(), row_displs.begin() + 1);
     
-      for (int i = 0; i < size; ++i) {
-        nnz_counts[i] = full_data.kcol[row_displs[i] + row_counts[i]] - full_data.kcol[row_displs[i]];
-      }
+        for (int i = 0; i < size; ++i) {
+            nnz_counts[i] = full_data.kcol[row_displs[i] + row_counts[i]] - full_data.kcol[row_displs[i]];
+        }
 
-      total_nnz = full_data.cols.size();
-      total_size = full_data.kcol.size() + total_nnz*2;
+        total_nnz = full_data.cols.size();
+        total_size = full_data.kcol.size() + total_nnz * 2;
 
-      combined_buffer[0] = total_nnz;
-      combined_buffer[1] = total_size;
-
-      std::copy(row_counts.begin(), row_counts.end(), combined_buffer.begin() + 2);
-      std::copy(row_displs.begin(), row_displs.end(), combined_buffer.begin() + size + 2);
-      std::copy(nnz_counts.begin(), nnz_counts.end(), combined_buffer.begin() + 2 * size + 2);
-
-      
+        combined_buffer[0] = total_nnz;
+        combined_buffer[1] = total_size;
+        std::copy(row_counts.begin(), row_counts.end(), combined_buffer.begin() + 2);
+        std::copy(row_displs.begin(), row_displs.end(), combined_buffer.begin() + size + 2);
+        std::copy(nnz_counts.begin(), nnz_counts.end(), combined_buffer.begin() + 2 * size + 2);
     }
 
-    // Broadcast counts and displacements
+    // Broadcast metadata
     MPI_Bcast(combined_buffer.data(), data_count, MPI_INT, 0, comm);
 
     if (rank != 0) {
-
-      total_nnz = combined_buffer[0];
-      total_size = combined_buffer[1];
-      row_counts.assign(combined_buffer.begin() + 2, combined_buffer.begin() + size + 2);
-      row_displs.assign(combined_buffer.begin() + size + 2, combined_buffer.begin() + 2 * size + 2);
-      nnz_counts.assign(combined_buffer.begin() + 2 * size + 2, combined_buffer.end());
+        total_nnz = combined_buffer[0];
+        total_size = combined_buffer[1];
+        row_counts.assign(combined_buffer.begin() + 2, combined_buffer.begin() + size + 2);
+        row_displs.assign(combined_buffer.begin() + size + 2, combined_buffer.begin() + 2 * size + 2);
+        nnz_counts.assign(combined_buffer.begin() + 2 * size + 2, combined_buffer.end());
     }
 
     std::vector<int> nnz_displs(size, 0);
@@ -91,40 +89,25 @@ void scatterCSRMatrix(
     local_data.kcol.resize(local_data.nrows + 1);
     local_data.cols.resize(nnz_counts[rank]);
     local_data.values.resize(nnz_counts[rank]);
-    
-    // Create a combined buffer to hold all data
-    std::vector<int> combined_buffer_int(total_size);  // Use int for both kcol and cols
-    std::vector<double> combined_buffer_double(total_nnz);  // Only for values (double)
 
-    // Pack the data into the combined buffer (only on rank 0)
-    if (rank == 0) {
-        // Copy kcol data (first part of the buffer)
-        std::copy(full_data.kcol.begin(), full_data.kcol.end(), combined_buffer_int.begin());
-
-        // Copy cols and values data (next parts of the buffer)
-        std::copy(full_data.cols.begin(), full_data.cols.end(), combined_buffer_int.begin() + full_data.kcol.size());
-        std::copy(full_data.values.begin(), full_data.values.end(), combined_buffer_double.begin());
-    }
-
-    // Total buffer for all data (including integer and double)
+    // Combined buffer for kcol, cols, values
     std::vector<char> total_combined_buffer(total_size * sizeof(int) + total_nnz * sizeof(double));
 
-    // Pack the integer data (kcol, cols)
-    std::memcpy(total_combined_buffer.data(), combined_buffer_int.data(), combined_buffer_int.size() * sizeof(int));
+    if (rank == 0) {
+        std::memcpy(total_combined_buffer.data(), full_data.kcol.data(), full_data.kcol.size() * sizeof(int));
+        std::memcpy(total_combined_buffer.data() + full_data.kcol.size() * sizeof(int), full_data.cols.data(), full_data.cols.size() * sizeof(int));
+        std::memcpy(total_combined_buffer.data() + (full_data.kcol.size() + full_data.cols.size()) * sizeof(int), full_data.values.data(), full_data.values.size() * sizeof(double));
+    }
 
-    // Pack the double data (values)
-    std::memcpy(total_combined_buffer.data() + combined_buffer_int.size() * sizeof(int), combined_buffer_double.data(), combined_buffer_double.size() * sizeof(double));
+    // Scatter combined buffer
+    std::vector<char> local_combined_buffer(row_counts[rank] * sizeof(int) + nnz_counts[rank] * (sizeof(int) + sizeof(double)));
+    MPI_Scatterv(total_combined_buffer.data(), scatter_counts.data(), scatter_displs.data(), MPI_BYTE,
+                 local_combined_buffer.data(), local_combined_buffer.size(), MPI_BYTE, 0, comm);
 
-    // Scatter the combined buffer
-    MPI_Scatterv(total_combined_buffer.data(), row_counts.data(), row_displs.data(), MPI_BYTE,
-                local_combined_buffer.data(), row_counts[rank] * sizeof(int) + total_nnz[rank] * sizeof(double), MPI_BYTE, 0, comm);
-
-    // Now unpack the data from the received buffer
-    int kcol_size = row_counts[rank] + 1;  // For kcol
-    std::copy(local_combined_buffer.begin(), local_combined_buffer.begin() + kcol_size, local_data.kcol.begin());
-
-    std::copy(local_combined_buffer.begin() + kcol_size, local_combined_buffer.begin() + kcol_size + nnz_counts[rank], local_data.cols.begin());
-    std::copy(local_combined_buffer.begin() + kcol_size + nnz_counts[rank], local_combined_buffer.end(), local_data.values.begin());
+    // Unpack local data
+    std::memcpy(local_data.kcol.data(), local_combined_buffer.data(), local_data.kcol.size() * sizeof(int));
+    std::memcpy(local_data.cols.data(), local_combined_buffer.data() + local_data.kcol.size() * sizeof(int), local_data.cols.size() * sizeof(int));
+    std::memcpy(local_data.values.data(), local_combined_buffer.data() + (local_data.kcol.size() + local_data.cols.size()) * sizeof(int), local_data.values.size() * sizeof(double));
 
     if (!local_data.kcol.empty()) {
         int initial = local_data.kcol[0];
@@ -132,9 +115,9 @@ void scatterCSRMatrix(
         local_data.kcol[local_data.kcol.size() - 1] = nnz_counts[rank];
     }
 
-    // Update nnz count
     local_data.nnz = nnz_counts[rank];
 }
+
 
 
 int main(int argc, char** argv)
