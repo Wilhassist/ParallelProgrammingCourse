@@ -48,6 +48,16 @@ void scatterCSRMatrix(
     std::vector<int> row_displs(size, 0);
     std::partial_sum(row_counts.begin(), row_counts.end() - 1, row_displs.begin() + 1);
 
+    if (rank == 0) {
+      std::cout << "Row counts: ";
+      for (int i = 0; i < size; ++i) std::cout << row_counts[i] << " ";
+      std::cout << std::endl;
+
+      std::cout << "Row displs: ";
+      for (int i = 0; i < size; ++i) std::cout << row_displs[i] << " ";
+      std::cout << std::endl;
+    }
+
     // Prepare local row pointers
     local_data.nrows = row_counts[rank];
     local_data.kcol.resize(local_data.nrows + 1);
