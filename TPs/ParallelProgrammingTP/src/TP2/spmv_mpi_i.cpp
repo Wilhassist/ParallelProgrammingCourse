@@ -255,7 +255,7 @@ int main(int argc, char** argv)
 
     scatterCSRMatrix(full_data, local_data, world_rank, world_size, MPI_COMM_WORLD);
 
-    local_matrix.copyCSRMatrixFromData(local_data);
+    local_matrix.copyCSRMatrixFromCSRData(local_data);
     
     // Step 7 : Computing the local multiplication
     local_y.resize(local_matrix.nrows());
