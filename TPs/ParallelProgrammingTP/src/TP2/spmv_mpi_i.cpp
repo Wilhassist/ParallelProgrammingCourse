@@ -80,10 +80,10 @@ void scatterCSRMatrix(
     MPI_Scatterv(
         full_data.kcol.data(), 
         row_counts.data(), 
-        row_displs.data() , 
+        row_displs.data(), 
         MPI_INT, 
         local_data.kcol.data(), 
-        row_counts[rank],  
+        row_counts[rank] + 1,  
         MPI_INT, 
         0, comm
     );
