@@ -38,41 +38,26 @@ void scatterCSRMatrix(
     int rank, int size, 
     MPI_Comm comm
 ) {
-
     std::size_t local_nrows;
     std::vector<int> row_counts(size, 0), row_displs(size, 0);
-    // Partition rows among processes
-    if (rank == 0){
-      local_nrows = full_data.nrows / size;
-      std::size_t remainder = full_data.nrows % size;
 
-      for (int i = 0; i < remainder; ++i) row_counts[i]++;  // Handle extra rows
-      std::partial_sum(row_counts.begin(), row_counts.end() - 1, row_displs.begin() + 1);
+    if (rank == 0) {
+        // Partition rows
+        local_nrows = full_data.nrows / size;
+        std::size_t remainder = full_data.nrows % size;
+
+        std::fill(row_counts.begin(), row_counts.end(), local_nrows);
+        for (int i = 0; i < remainder; ++i) row_counts[i]++;
+        std::partial_sum(row_counts.begin(), row_counts.end() - 1, row_displs.begin() + 1);
     }
-    
-    // Broadcast row_counts and row_displs to all ranks
+
+    // Broadcast counts and displacements
     MPI_Bcast(row_counts.data(), size, MPI_INT, 0, comm);
     MPI_Bcast(row_displs.data(), size, MPI_INT, 0, comm);
 
-    // Prepare local row pointers
+    // Prepare local data
     local_data.nrows = row_counts[rank];
     local_data.kcol.resize(local_data.nrows + 1);
-
-    /*if (rank == 0) {
-      // Root process sends data to each process
-      for (int i = 0; i < size; ++i) {
-          int send_count = row_counts[i] + 1; // Number of elements to send
-
-          std::cout << "iteration " << i << " + " << send_count << std::endl;
-          MPI_Send(full_data.kcol.data() + row_displs[i], send_count, MPI_INT, i, 0, comm);
-      }
-    } else {
-      // Other processes receive their data
-      int recv_count = row_counts[rank] + 1; // Number of elements to receive
-      std::cout << "rank " << rank << " + " << recv_count << std::endl;
-      
-      MPI_Recv(local_data.kcol.data(), recv_count, MPI_INT, 0, 0, comm, MPI_STATUS_IGNORE);
-    }*/
 
     MPI_Scatterv(
         full_data.kcol.data(), 
@@ -85,35 +70,34 @@ void scatterCSRMatrix(
         0, comm
     );
 
-    // Adjust local row pointers
+    // Adjust row pointers
     int row_offset = 0;
-    if (rank == 0) {
+    if (rank == 0 && row_displs[rank] < full_data.kcol.size()) {
         row_offset = full_data.kcol[row_displs[rank]];
     }
     MPI_Bcast(&row_offset, 1, MPI_INT, 0, comm);
 
     if (!local_data.kcol.empty()) {
-        for (int& k : local_data.kcol) {
-            k -= row_offset;
+        for (int& k : local_data.kcol) k -= row_offset;
+    }
+
+    // Calculate nnz counts
+    std::vector<int> nnz_counts(size, 0);
+    if (rank == 0) {
+        for (int i = 0; i < size; ++i) {
+            nnz_counts[i] = full_data.kcol[row_displs[i] + row_counts[i]] - full_data.kcol[row_displs[i]];
         }
     }
+    MPI_Bcast(nnz_counts.data(), size, MPI_INT, 0, comm);
 
-    // Calculate non-zero elements for each process
-    std::vector<int> nnz_counts(size, 0);
-    if(rank == 0){
-      for (int i = 0; i < size; ++i) {
-        nnz_counts[i] = full_data.kcol[row_displs[i] + row_counts[i]] - full_data.kcol[row_displs[i]];
-      }
-    }
-
-    MPI_Bcast(nnz_counts.data(), size, MPI_INT, 0, comm);    
-
-    for (int i = 0; i < size; ++i) {
-    std::cout << "Process " << i << ": "
-              << "kcol count = " << row_counts[i] + 1 << ", "
-              << "cols count = " << nnz_counts[i] << ", " 
-              << "values count = " << nnz_counts[i] 
-              << std::endl;
+    if (rank == 0) {
+        for (int i = 0; i < size; ++i) {
+            std::cout << "Process " << i << ": "
+                      << "kcol count = " << row_counts[i] + 1 << ", "
+                      << "cols count = " << nnz_counts[i] << ", "
+                      << "values count = " << nnz_counts[i]
+                      << std::endl;
+        }
     }
 
     std::vector<int> nnz_displs(size, 0);
@@ -145,9 +129,10 @@ void scatterCSRMatrix(
         0, comm
     );
 
-    // Update local nnz count
+    // Update nnz count
     local_data.nnz = nnz_counts[rank];
 }
+
 
 int main(int argc, char** argv)
 {
