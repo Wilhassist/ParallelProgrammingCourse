@@ -38,15 +38,29 @@ void scatterCSRMatrix(
     int rank, int size, 
     MPI_Comm comm
 ) {
+
+    std::vector<int> row_counts, row_displs;
+    std::size_t local_nrows;
     // Partition rows among processes
-    std::size_t local_nrows = full_data.nrows / size;
-    std::size_t remainder = full_data.nrows % size;
+    if (rank == 0){
+      local_nrows = full_data.nrows / size;
+      std::size_t remainder = full_data.nrows % size;
 
-    std::vector<int> row_counts(size, local_nrows);
-    for (int i = 0; i < remainder; ++i) row_counts[i]++;  // Handle extra rows
+      row_counts.resize(size, local_nrows);
+      for (int i = 0; i < remainder; ++i) row_counts[i]++;  // Handle extra rows
 
-    std::vector<int> row_displs(size, 0);
-    std::partial_sum(row_counts.begin(), row_counts.end() - 1, row_displs.begin() + 1);
+      row_displs.resize(size, 0);
+      std::partial_sum(row_counts.begin(), row_counts.end() - 1, row_displs.begin() + 1);
+    }
+    
+
+    // Broadcast row_counts and row_displs to all ranks
+    MPI_Bcast(row_counts.data(), size, MPI_INT, 0, comm);
+    MPI_Bcast(row_displs.data(), size, MPI_INT, 0, comm);
+
+    // Prepare local row pointers
+    local_data.nrows = row_counts[rank];
+    local_data.kcol.resize(local_data.nrows + 1);
 
     if (rank == 0) {
       std::cout << "Row counts: ";
@@ -255,7 +269,7 @@ int main(int argc, char** argv)
       //MPI_Bcast(&global_nrows, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
 
       // vector x
-      //x.resize(global_nrows);
+      x.resize(global_nrows);
       //MPI_Bcast(x.data(), global_nrows, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     }
 
