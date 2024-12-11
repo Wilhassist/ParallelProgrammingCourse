@@ -59,23 +59,6 @@ void scatterCSRMatrix(
     // Prepare local data
     local_data.nrows = row_counts[rank];
     local_data.kcol.resize(local_data.nrows + 1);
-
-    /*if (rank == 0) {
-        // Root process sends data to each process
-        for (int i = 0; i < size; ++i) {
-            int send_count = row_counts[i] + 1; // Number of elements to send
-            std::cout << "Process " << i << " send count: " << send_count << std::endl;
-            MPI_Send(full_data.kcol.data() + row_displs[i], send_count, MPI_INT, i, 0, comm);
-        }
-    } else {
-        // Other processes receive their data
-        int recv_count = row_counts[rank] + 1; // Number of elements to receive
-        std::cout << "Process " << rank << " recv count: " << recv_count << std::endl;
-
-        local_data.kcol.resize(recv_count); // Proper resizing to avoid truncation
-        MPI_Recv(local_data.kcol.data(), recv_count, MPI_INT, 0, 0, comm, MPI_STATUS_IGNORE);
-    }*/
-
     
     MPI_Scatterv(
         full_data.kcol.data(), 
@@ -106,15 +89,20 @@ void scatterCSRMatrix(
     MPI_Scatter(row_offsets.data(), 1, MPI_INT, &local_row_offset, 1, MPI_INT, 0, comm);
 
     if (!local_data.kcol.empty()) {
+        std::cout << "local kcol: ";
+        for (const auto& val : local_data.kcol) {
+          std::cout << val << " ";
+        }
+        std::cout << std::endl;
         for (int& k : local_data.kcol) k -= local_row_offset;
     }
 
+    
     std::cout << "local kcol: ";
     for (const auto& val : local_data.kcol) {
       std::cout << val << " ";
     }
     std::cout << std::endl;
-
     // Calculate nnz counts
     std::vector<int> nnz_counts(size, 0);
     if (rank == 0) {
