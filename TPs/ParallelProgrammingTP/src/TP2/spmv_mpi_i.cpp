@@ -295,24 +295,11 @@ int main(int argc, char** argv)
         MPI_COMM_WORLD                       // Communicator
     );
 
-
-
-    // Verify results
-    /*std::cout << "Rank " << world_rank << " local_kcol: ";
-    for (const auto& k : local_data.kcol) {
-        std::cout << k << " ";
+    if (world_rank == 0)
+    {
+      double normy2 = PPTP::norm2(y);
+      std::cout<<"||MPI - y||="<<normy2<<std::endl;
     }
-    std::cout << std::endl;
-    //std::cout << "\n";
-
-    std::cout << "Rank " << world_rank << " local_cols: ";
-    std::cout << local_data.cols.size() << " ";
-    std::cout << "\n";
-
-    std::cout << "Rank " << world_rank << " local_values: ";
-    std::cout << local_data.values.size() << " ";
-    std::cout << "\n";*/
-
   }
 
 
