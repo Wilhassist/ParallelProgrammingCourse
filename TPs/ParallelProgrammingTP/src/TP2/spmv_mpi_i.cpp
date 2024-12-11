@@ -58,7 +58,7 @@ void scatterCSRMatrix(
 
     // Prepare local data
     local_data.nrows = row_counts[rank];
-    local_data.kcol.resize(local_data.nrows + 1);
+    local_data.kcol.resize(local_data.nrows + 2);
 
     /*if (rank == 0) {
         // Root process sends data to each process
@@ -83,7 +83,7 @@ void scatterCSRMatrix(
         row_displs.data(), 
         MPI_INT, 
         local_data.kcol.data(), 
-        row_counts[rank] + 1,  
+        row_counts[rank] + 2,  
         MPI_INT, 
         0, comm
     );
