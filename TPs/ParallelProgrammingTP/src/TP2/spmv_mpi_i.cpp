@@ -39,28 +39,22 @@ void scatterCSRMatrix(
     MPI_Comm comm
 ) {
 
-    std::vector<int> row_counts, row_displs;
-    std::size_t local_nrows;
+    std::vector<int> row_counts(size, 0), row_displs(size, 0);
     // Partition rows among processes
     if (rank == 0){
       local_nrows = full_data.nrows / size;
       std::size_t remainder = full_data.nrows % size;
 
-      row_counts.resize(size, local_nrows);
       for (int i = 0; i < remainder; ++i) row_counts[i]++;  // Handle extra rows
-
-      row_displs.resize(size, 0);
       std::partial_sum(row_counts.begin(), row_counts.end() - 1, row_displs.begin() + 1);
     }
-    
-    row_counts.resize(size, 0);
-    row_displs.resize(size, 0);
     
     // Broadcast row_counts and row_displs to all ranks
     MPI_Bcast(row_counts.data(), size, MPI_INT, 0, comm);
     MPI_Bcast(row_displs.data(), size, MPI_INT, 0, comm);
 
     // Prepare local row pointers
+    std::size_t local_nrows;
     local_data.nrows = row_counts[rank];
     local_data.kcol.resize(local_data.nrows + 1);
 
@@ -92,16 +86,27 @@ void scatterCSRMatrix(
     );
 
     // Adjust local row pointers
-    /*int row_offset = full_data.kcol[row_displs[rank]];
-    for (int& k : local_data.kcol) {
-        k -= row_offset;
-    }*/
+    int row_offset = 0;
+    if (rank == 0) {
+        row_offset = full_data.kcol[row_displs[rank]];
+    }
+    MPI_Bcast(&row_offset, 1, MPI_INT, 0, comm);
+
+    if (!local_data.kcol.empty()) {
+        for (int& k : local_data.kcol) {
+            k -= row_offset;
+        }
+    }
 
     // Calculate non-zero elements for each process
-    /*std::vector<int> nnz_counts(size, 0);
-    for (int i = 0; i < size; ++i) {
+    std::vector<int> nnz_counts(size, 0);
+    if(rank == 0){
+      for (int i = 0; i < size; ++i) {
         nnz_counts[i] = full_data.kcol[row_displs[i] + row_counts[i]] - full_data.kcol[row_displs[i]];
+      }
     }
+
+    MPI_Bcast(nnz_counts.data(), size, MPI_INT, 0, comm);    
 
     for (int i = 0; i < size; ++i) {
     std::cout << "Process " << i << ": "
@@ -141,7 +146,7 @@ void scatterCSRMatrix(
     );
 
     // Update local nnz count
-    local_data.nnz = nnz_counts[rank];*/
+    local_data.nnz = nnz_counts[rank];
 }
 
 int main(int argc, char** argv)
