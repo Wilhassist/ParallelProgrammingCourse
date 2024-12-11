@@ -98,16 +98,17 @@ void scatterCSRMatrix(
     }
 
     // Calculate non-zero elements for each process
-    std::vector<int> nnz_counts(size, 0);
+    /*std::vector<int> nnz_counts(size, 0);
     for (int i = 0; i < size; ++i) {
         nnz_counts[i] = full_data.kcol[row_displs[i] + row_counts[i]] - full_data.kcol[row_displs[i]];
-    }
+    }*/
 
     for (int i = 0; i < size; ++i) {
     std::cout << "Process " << i << ": "
               << "kcol count = " << row_counts[i] + 1 << ", "
-              << "cols count = " << nnz_counts[i] << ", "
-              << "values count = " << nnz_counts[i] << std::endl;
+              << "cols count = " << nnz_counts[i] << ", " 
+              //<< "values count = " << nnz_counts[i] 
+              << std::endl;
     }
 
     /*std::vector<int> nnz_displs(size, 0);
