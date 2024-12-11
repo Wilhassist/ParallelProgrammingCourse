@@ -92,38 +92,39 @@ void scatterCSRMatrix(
     local_data.cols.resize(nnz_counts[rank]);
     local_data.values.resize(nnz_counts[rank]);
     
-    MPI_Scatterv(
-        full_data.kcol.data(), 
-        row_counts.data(), 
-        row_displs.data(), 
-        MPI_INT, 
-        local_data.kcol.data(), 
-        row_counts[rank] + 1,  
-        MPI_INT, 
-        0, comm
-    );    
+    // Create a combined buffer to hold all data
+    std::vector<int> combined_buffer_int(total_size);  // Use int for both kcol and cols
+    std::vector<double> combined_buffer_double(total_nnz);  // Only for values (double)
 
-    MPI_Scatterv(
-        full_data.cols.data(), 
-        nnz_counts.data(), 
-        nnz_displs.data(), 
-        MPI_INT, 
-        local_data.cols.data(), 
-        nnz_counts[rank], 
-        MPI_INT, 
-        0, comm
-    );
+    // Pack the data into the combined buffer (only on rank 0)
+    if (rank == 0) {
+        // Copy kcol data (first part of the buffer)
+        std::copy(full_data.kcol.begin(), full_data.kcol.end(), combined_buffer_int.begin());
 
-    MPI_Scatterv(
-        full_data.values.data(), 
-        nnz_counts.data(), 
-        nnz_displs.data(), 
-        MPI_DOUBLE, 
-        local_data.values.data(), 
-        nnz_counts[rank], 
-        MPI_DOUBLE, 
-        0, comm
-    );
+        // Copy cols and values data (next parts of the buffer)
+        std::copy(full_data.cols.begin(), full_data.cols.end(), combined_buffer_int.begin() + full_data.kcol.size());
+        std::copy(full_data.values.begin(), full_data.values.end(), combined_buffer_double.begin());
+    }
+
+    // Total buffer for all data (including integer and double)
+    std::vector<char> total_combined_buffer(total_size * sizeof(int) + total_nnz * sizeof(double));
+
+    // Pack the integer data (kcol, cols)
+    std::memcpy(total_combined_buffer.data(), combined_buffer_int.data(), combined_buffer_int.size() * sizeof(int));
+
+    // Pack the double data (values)
+    std::memcpy(total_combined_buffer.data() + combined_buffer_int.size() * sizeof(int), combined_buffer_double.data(), combined_buffer_double.size() * sizeof(double));
+
+    // Scatter the combined buffer
+    MPI_Scatterv(total_combined_buffer.data(), row_counts.data(), row_displs.data(), MPI_BYTE,
+                local_combined_buffer.data(), row_counts[rank] * sizeof(int) + total_nnz[rank] * sizeof(double), MPI_BYTE, 0, comm);
+
+    // Now unpack the data from the received buffer
+    int kcol_size = row_counts[rank] + 1;  // For kcol
+    std::copy(local_combined_buffer.begin(), local_combined_buffer.begin() + kcol_size, local_data.kcol.begin());
+
+    std::copy(local_combined_buffer.begin() + kcol_size, local_combined_buffer.begin() + kcol_size + nnz_counts[rank], local_data.cols.begin());
+    std::copy(local_combined_buffer.begin() + kcol_size + nnz_counts[rank], local_combined_buffer.end(), local_data.values.begin());
 
     if (!local_data.kcol.empty()) {
         int initial = local_data.kcol[0];
