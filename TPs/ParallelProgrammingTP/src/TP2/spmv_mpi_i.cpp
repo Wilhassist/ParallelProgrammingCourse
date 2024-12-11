@@ -259,6 +259,12 @@ int main(int argc, char** argv)
       double normy = PPTP::norm2(y) ;
       std::cout<<"||y||="<<normy<<std::endl ;
 
+      std::cout << "global y true: ";
+        for (const auto& val : y) {
+          std::cout << val << " ";
+        }
+        std::cout << std::endl;
+
       Timer::Sentry sentry(timer,"MPI_SpMV") ;
       
       full_data = matrix.data();
