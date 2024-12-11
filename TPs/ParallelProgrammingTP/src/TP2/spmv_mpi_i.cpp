@@ -39,6 +39,7 @@ void scatterCSRMatrix(
     MPI_Comm comm
 ) {
 
+    std::size_t local_nrows;
     std::vector<int> row_counts(size, 0), row_displs(size, 0);
     // Partition rows among processes
     if (rank == 0){
@@ -54,7 +55,6 @@ void scatterCSRMatrix(
     MPI_Bcast(row_displs.data(), size, MPI_INT, 0, comm);
 
     // Prepare local row pointers
-    std::size_t local_nrows;
     local_data.nrows = row_counts[rank];
     local_data.kcol.resize(local_data.nrows + 1);
 
