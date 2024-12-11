@@ -253,7 +253,7 @@ int main(int argc, char** argv)
         x[i] = i+1 ;
 
       std::cout << "local kcol: ";
-        for (const auto& val : matrix.data().kcol()) {
+        for (const auto& val : matrix.kcol) {
           std::cout << val << " ";
         }
         std::cout << std::endl;
