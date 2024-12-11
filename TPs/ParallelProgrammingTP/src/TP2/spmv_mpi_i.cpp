@@ -260,7 +260,7 @@ int main(int argc, char** argv)
       local_matrix.mult(x,local_y);
     }
 
-    int global_nrows = full_data.nrows;  // Total number of rows
+
     std::vector<int> row_counts(world_size, 0), row_displs(world_size, 0);
 
     // If rank 0, calculate row_counts and row_displs as in scatter
@@ -294,7 +294,7 @@ int main(int argc, char** argv)
         row_displs.data(),          // Displacements
         MPI_DOUBLE,                 // Data type
         0,                          // Root process
-        comm                        // Communicator
+        MPI_COMM_WORLD                       // Communicator
     );
 
 
