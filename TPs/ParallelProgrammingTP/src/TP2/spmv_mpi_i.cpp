@@ -94,7 +94,7 @@ void scatterCSRMatrix(
     if (!local_data.kcol.empty()) {
         int initial = local_data.kcol[0];
         for (int& k : local_data.kcol) k -= initial;
-        local_data.kcol[local_data.kcol.size - 1] = nnz_counts[rank];
+        local_data.kcol[local_data.kcol.size() - 1] = nnz_counts[rank];
     }
 
     std::vector<int> nnz_displs(size, 0);
