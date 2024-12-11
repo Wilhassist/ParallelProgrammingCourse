@@ -264,7 +264,7 @@ int main(int argc, char** argv)
       MPI_Bcast(x.data(), global_nrows, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     }
 
-     std::vector<int> row_counts(world_size, 0), row_displs(world_size, 0);
+    std::vector<int> row_counts(world_size, 0), row_displs(world_size, 0);
 
     scatterCSRMatrix(full_data, local_data,row_counts,
                    row_displs, world_rank, world_size, MPI_COMM_WORLD);
@@ -276,6 +276,19 @@ int main(int argc, char** argv)
     {
       local_matrix.mult(x,local_y);
     }
+
+    for (int p = 0; p < world_size; ++p) {
+        if (world_rank == p) {
+            std::cout << "Rank " << world_rank << " local_y: ";
+            for (const auto& val : local_y) {
+                std::cout << val << " ";
+            }
+            std::cout << std::endl;
+        }
+        MPI_Barrier(MPI_COMM_WORLD); // Synchronize output
+    }
+
+    
 
     // Gather the results back to process 0
     std::vector<double> y;
@@ -294,6 +307,14 @@ int main(int argc, char** argv)
         0,                          // Root process
         MPI_COMM_WORLD                       // Communicator
     );
+
+    if (world_rank == 0) {
+      std::cout << "Final gathered y: ";
+      for (const auto& val : y) {
+          std::cout << val << " ";
+      }
+      std::cout << std::endl;
+    }
 
     if (world_rank == 0)
     {
