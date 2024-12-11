@@ -100,11 +100,28 @@ void scatterCSRMatrix(
         std::memcpy(total_combined_buffer.data() + full_data.kcol.size() * sizeof(int), full_data.cols.data(), full_data.cols.size() * sizeof(int));
         std::memcpy(total_combined_buffer.data() + (full_data.kcol.size() + full_data.cols.size()) * sizeof(int), full_data.values.data(), full_data.values.size() * sizeof(double));
     }
+
+    std::vector<int> scatter_counts(size, 0);
+    std::vector<int> scatter_displs(size, 0);
+
+    if(rank == 0){
+      // Compute scatter counts for each rank
+      for (int i = 0; i < size; ++i) {
+          scatter_counts[i] = (row_counts[i] + 1) * sizeof(int) // kcol
+                            + nnz_counts[i] * sizeof(int)       // cols
+                            + nnz_counts[i] * sizeof(double);   // values
+      }
+
+      // Compute displacements as prefix sum of scatter_counts
+      for (int i = 1; i < size; ++i) {
+          scatter_displs[i] = scatter_displs[i - 1] + scatter_counts[i - 1];
+      }
+    }
     
     // Scatter combined buffer
     std::vector<char> local_combined_buffer(row_counts[rank] * sizeof(int) + nnz_counts[rank] * (sizeof(int) + sizeof(double)));
     MPI_Scatterv(total_combined_buffer.data(), scatter_counts.data(), scatter_displs.data(), MPI_BYTE,
-                 local_combined_buffer.data(), local_combined_buffer.size(), MPI_BYTE, 0, comm);
+                 local_combined_buffer.data(), scatter_counts[rank], MPI_BYTE, 0, comm);
 
     // Unpack local data
     std::memcpy(local_data.kcol.data(), local_combined_buffer.data(), local_data.kcol.size() * sizeof(int));
