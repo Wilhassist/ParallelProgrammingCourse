@@ -90,7 +90,7 @@ void scatterCSRMatrix(
     }
     MPI_Bcast(nnz_counts.data(), size, MPI_INT, 0, comm);
 
-    if (rank == 0) {
+    /*if (rank == 0) {
         for (int i = 0; i < size; ++i) {
             std::cout << "Process " << i << ": "
                       << "kcol count = " << row_counts[i] + 1 << ", "
@@ -98,7 +98,7 @@ void scatterCSRMatrix(
                       << "values count = " << nnz_counts[i]
                       << std::endl;
         }
-    }
+    }*/
 
     std::vector<int> nnz_displs(size, 0);
     std::partial_sum(nnz_counts.begin(), nnz_counts.end() - 1, nnz_displs.begin() + 1);
@@ -245,18 +245,62 @@ int main(int argc, char** argv)
     
     {
       // gloal_matrix_size
-      //MPI_Bcast(&global_nrows, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
+      MPI_Bcast(&global_nrows, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
 
       // vector x
       x.resize(global_nrows);
-      //MPI_Bcast(x.data(), global_nrows, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+      MPI_Bcast(x.data(), global_nrows, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     }
 
     scatterCSRMatrix(full_data, local_data, world_rank, world_size, MPI_COMM_WORLD);
     
+    // Step 7 : Computing the local multiplication
+    local_y.resize(local_matrix.nrows());
+    {
+      local_matrix.mult(x,local_y);
+    }
+
+    int global_nrows = full_data.nrows;  // Total number of rows
+    std::vector<int> row_counts(world_size, 0), row_displs(world_size, 0);
+
+    // If rank 0, calculate row_counts and row_displs as in scatter
+    if (world_rank == 0) {
+        int local_nrows = global_nrows / world_size;
+        int remainder = global_nrows % world_size;
+
+        for (int i = 0; i < world_size; ++i) {
+            row_counts[i] = local_nrows + (i < remainder ? 1 : 0);
+        }
+
+        std::partial_sum(row_counts.begin(), row_counts.end() - 1, row_displs.begin() + 1);
+    }
+
+    // Broadcast row_counts and row_displs to all processes
+    MPI_Bcast(row_counts.data(), world_size, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(row_displs.data(), world_size, MPI_INT, 0, MPI_COMM_WORLD);
+
+    // Gather the results back to process 0
+    std::vector<double> y;
+    if (world_rank == 0) {
+        y.resize(global_nrows);  // Resize on rank 0 to hold the entire result
+    }
+
+    MPI_Gatherv(
+        local_y.data(),             // Local buffer
+        local_y.size(),             // Number of elements to send
+        MPI_DOUBLE,                 // Data type
+        y.data(),                   // Global buffer (on rank 0)
+        row_counts.data(),          // Counts of rows per process
+        row_displs.data(),          // Displacements
+        MPI_DOUBLE,                 // Data type
+        0,                          // Root process
+        comm                        // Communicator
+    );
+
+
 
     // Verify results
-    std::cout << "Rank " << world_rank << " local_kcol: ";
+    /*std::cout << "Rank " << world_rank << " local_kcol: ";
     for (const auto& k : local_data.kcol) {
         std::cout << k << " ";
     }
@@ -269,7 +313,7 @@ int main(int argc, char** argv)
 
     std::cout << "Rank " << world_rank << " local_values: ";
     std::cout << local_data.values.size() << " ";
-    std::cout << "\n";
+    std::cout << "\n";*/
 
   }
 
