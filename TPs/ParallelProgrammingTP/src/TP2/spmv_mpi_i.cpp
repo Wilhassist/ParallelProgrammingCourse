@@ -71,14 +71,24 @@ void scatterCSRMatrix(
     );
 
     // Adjust row pointers
-    int row_offset = 0;
-    if (rank == 0 && row_displs[rank] < full_data.kcol.size()) {
-        row_offset = full_data.kcol[row_displs[rank]];
+    std::vector<int> row_offsets(size, 0);
+
+    // Compute offsets on rank 0
+    if (rank == 0) {
+        for (int i = 0; i < size; ++i) {
+            if (row_displs[i] < full_data.kcol.size()) {
+                row_offsets[i] = full_data.kcol[row_displs[i]];
+            } else {
+                row_offsets[i] = 0; // Fallback in case of invalid displacement
+            }
+        }
     }
-    MPI_Bcast(&row_offset, 1, MPI_INT, 0, comm);
+
+    int local_row_offset = 0;
+    MPI_Scatter(row_offsets.data(), 1, MPI_INT, &local_row_offset, 1, MPI_INT, 0, comm);
 
     if (!local_data.kcol.empty()) {
-        for (int& k : local_data.kcol) k -= row_offset;
+        for (int& k : local_data.kcol) k -= local_row_offset;
     }
 
     // Calculate nnz counts
@@ -131,6 +141,32 @@ void scatterCSRMatrix(
 
     // Update nnz count
     local_data.nnz = nnz_counts[rank];
+
+    local_matrix.copyCSRMatrixFromCSRData(local_data);
+    
+    // Step 7 : Computing the local multiplication
+    std::vector<double> local_y(local_matrix.nrows());
+    {
+      local_matrix.mult(x,local_y);
+    }
+
+    // Gather the results back to process 0
+    std::vector<double> y;
+    if (world_rank == 0) {
+        y.resize(full_data.nrows);  // Resize on rank 0 to hold the entire result
+    }
+
+    MPI_Gatherv(
+        local_y.data(),             // Local buffer
+        local_y.size(),             // Number of elements to send
+        MPI_DOUBLE,                 // Data type
+        y.data(),                   // Global buffer (on rank 0)
+        row_counts.data(),          // Counts of rows per process
+        row_displs.data(),          // Displacements
+        MPI_DOUBLE,                 // Data type
+        0,                          // Root process
+        MPI_COMM_WORLD                       // Communicator
+    );
 }
 
 
@@ -255,50 +291,7 @@ int main(int argc, char** argv)
 
     scatterCSRMatrix(full_data, local_data, world_rank, world_size, MPI_COMM_WORLD);
 
-    local_matrix.copyCSRMatrixFromCSRData(local_data);
     
-    // Step 7 : Computing the local multiplication
-    local_y.resize(local_matrix.nrows());
-    {
-      local_matrix.mult(x,local_y);
-    }
-
-
-    std::vector<int> row_counts(world_size, 0), row_displs(world_size, 0);
-
-    // If rank 0, calculate row_counts and row_displs as in scatter
-    if (world_rank == 0) {
-        int local_nrows = global_nrows / world_size;
-        int remainder = global_nrows % world_size;
-
-        for (int i = 0; i < world_size; ++i) {
-            row_counts[i] = local_nrows + (i < remainder ? 1 : 0);
-        }
-
-        std::partial_sum(row_counts.begin(), row_counts.end() - 1, row_displs.begin() + 1);
-    }
-
-    // Broadcast row_counts and row_displs to all processes
-    MPI_Bcast(row_counts.data(), world_size, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast(row_displs.data(), world_size, MPI_INT, 0, MPI_COMM_WORLD);
-
-    // Gather the results back to process 0
-    std::vector<double> y;
-    if (world_rank == 0) {
-        y.resize(global_nrows);  // Resize on rank 0 to hold the entire result
-    }
-
-    MPI_Gatherv(
-        local_y.data(),             // Local buffer
-        local_y.size(),             // Number of elements to send
-        MPI_DOUBLE,                 // Data type
-        y.data(),                   // Global buffer (on rank 0)
-        row_counts.data(),          // Counts of rows per process
-        row_displs.data(),          // Displacements
-        MPI_DOUBLE,                 // Data type
-        0,                          // Root process
-        MPI_COMM_WORLD                       // Communicator
-    );
 
 
 
