@@ -40,21 +40,25 @@ void scatterCSRMatrix(
     MPI_Comm comm
 ) {
     std::size_t local_nrows;
-    
-
+    std::vector<int> nnz_counts(size, 0);
     if (rank == 0) {
-        // Partition rows
-        local_nrows = full_data.nrows / size;
-        std::size_t remainder = full_data.nrows % size;
+      // Partition rows
+      local_nrows = full_data.nrows / size;
+      std::size_t remainder = full_data.nrows % size;
 
-        std::fill(row_counts.begin(), row_counts.end(), local_nrows);
-        for (int i = 0; i < remainder; ++i) row_counts[i]++;
-        std::partial_sum(row_counts.begin(), row_counts.end(), row_displs.begin() + 1);
+      std::fill(row_counts.begin(), row_counts.end(), local_nrows);
+      for (int i = 0; i < remainder; ++i) row_counts[i]++;
+      std::partial_sum(row_counts.begin(), row_counts.end(), row_displs.begin() + 1);
+    
+      for (int i = 0; i < size; ++i) {
+        nnz_counts[i] = full_data.kcol[row_displs[i] + row_counts[i]] - full_data.kcol[row_displs[i]];
+      }
     }
 
     // Broadcast counts and displacements
     MPI_Bcast(row_counts.data(), size, MPI_INT, 0, comm);
     MPI_Bcast(row_displs.data(), size, MPI_INT, 0, comm);
+    MPI_Bcast(nnz_counts.data(), size, MPI_INT, 0, comm);
 
     // Prepare local data
     local_data.nrows = row_counts[rank];
@@ -89,18 +93,9 @@ void scatterCSRMatrix(
 
     if (!local_data.kcol.empty()) {
         int initial = local_data.kcol[0];
-        local_data.kcol[row_counts[rank]] = local_row_offset;
         for (int& k : local_data.kcol) k -= initial;
+        local_data.kcol[local_data.kcol.size - 1] = nnz_counts[rank];
     }
-
-    // Calculate nnz counts
-    std::vector<int> nnz_counts(size, 0);
-    if (rank == 0) {
-        for (int i = 0; i < size; ++i) {
-            nnz_counts[i] = full_data.kcol[row_displs[i] + row_counts[i]] - full_data.kcol[row_displs[i]];
-        }
-    }
-    MPI_Bcast(nnz_counts.data(), size, MPI_INT, 0, comm);
 
     std::vector<int> nnz_displs(size, 0);
     std::partial_sum(nnz_counts.begin(), nnz_counts.end() - 1, nnz_displs.begin() + 1);
