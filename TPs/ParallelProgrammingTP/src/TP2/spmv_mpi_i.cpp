@@ -106,7 +106,7 @@ void scatterCSRMatrix(
     for (int i = 0; i < size; ++i) {
     std::cout << "Process " << i << ": "
               << "kcol count = " << row_counts[i] + 1 << ", "
-              << "cols count = " << nnz_counts[i] << ", " 
+              //<< "cols count = " << nnz_counts[i] << ", " 
               //<< "values count = " << nnz_counts[i] 
               << std::endl;
     }
