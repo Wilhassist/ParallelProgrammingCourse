@@ -76,9 +76,9 @@ void scatterCSRMatrix(
         MPI_Recv(local_data.kcol.data(), recv_count, MPI_INT, 0, 0, comm, MPI_STATUS_IGNORE);
     }
 
-    if (world_rank == 0) {
+    if (rank == 0) {
       std::cout << "local kcol: ";
-      for (const auto& val : kcol) {
+      for (const auto& val : local_data.kcol) {
           std::cout << val << " ";
       }
       std::cout << std::endl;
