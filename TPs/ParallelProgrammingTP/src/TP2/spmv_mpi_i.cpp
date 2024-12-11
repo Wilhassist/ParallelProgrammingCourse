@@ -241,12 +241,12 @@ int main(int argc, char** argv)
       for(std::size_t i=0;i<global_nrows;++i)
         x[i] = i+1 ;
 
-      /*{
+      {
         Timer::Sentry sentry(timer,"SpMV") ;
         matrix.mult(x,y) ;
       }
       double normy = PPTP::norm2(y) ;
-      std::cout<<"||y||="<<normy<<std::endl ;*/
+      std::cout<<"||y||="<<normy<<std::endl ;
 
       Timer::Sentry sentry(timer,"MPI_SpMV") ;
       
