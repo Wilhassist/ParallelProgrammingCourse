@@ -95,21 +95,38 @@ class CSRMatrix
       return submatrix;
    }
 
-    void copyCSRMatrixFromCSRData(const PPTP::CSRData& csr_data) {
+    void copyCSRMatrixFromData(const std::vector<double>& data) {      
       // Update matrix metadata
-      m_nrows = csr_data.nrows;
-      m_nnz = csr_data.nnz;
+      m_nrows = static_cast<int>(data[0]);
+      m_nnz = static_cast<int>(data[1]);
 
       // Resize vectors in the CSRMatrix
       m_kcol.resize(m_nrows + 1);
       m_cols.resize(m_nnz);
       m_values.resize(m_nnz);
 
-      // Copy data from CSRData into the vectors
-      std::copy(csr_data.kcol.begin(), csr_data.kcol.end(), m_kcol.begin());
-      std::copy(csr_data.cols.begin(), csr_data.cols.end(), m_cols.begin());
-      std::copy(csr_data.values.begin(), csr_data.values.end(), m_values.begin());
-  }
+      // Copy data from the received struct into the vectors
+      std::copy(data.begin() + 2, data.begin() + 2 + (m_nrows + 1), m_kcol.begin());
+      std::copy(data.begin() + 2 + (m_nrows + 1), data.begin() + 2 + (m_nrows + 1) + m_nnz, m_cols.begin());
+      std::copy(data.begin() + 2 + (m_nrows + 1) + m_nnz, data.end(), m_values.begin());
+
+    }
+
+    void copyCSRMatrixFromCSRData(const PPTP::CSRData& csr_data) {
+        // Update matrix metadata
+        m_nrows = csr_data.nrows;
+        m_nnz = csr_data.nnz;
+
+        // Resize vectors in the CSRMatrix
+        m_kcol.resize(m_nrows + 1);
+        m_cols.resize(m_nnz);
+        m_values.resize(m_nnz);
+
+        // Copy data from CSRData into the vectors
+        std::copy(csr_data.kcol.begin(), csr_data.kcol.end(), m_kcol.begin());
+        std::copy(csr_data.cols.begin(), csr_data.cols.end(), m_cols.begin());
+        std::copy(csr_data.values.begin(), csr_data.values.end(), m_values.begin());
+    }
 
 
     void setFromTriplets(int nrows, std::vector<MatrixEntryType> const& entries)
