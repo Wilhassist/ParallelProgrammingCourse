@@ -53,24 +53,12 @@ void scatterCSRMatrix(
       std::partial_sum(row_counts.begin(), row_counts.end() - 1, row_displs.begin() + 1);
     }
     
-
+    row_counts.resize(size, 0);
+    row_displs.resize(size, 0);
+    
     // Broadcast row_counts and row_displs to all ranks
     MPI_Bcast(row_counts.data(), size, MPI_INT, 0, comm);
     MPI_Bcast(row_displs.data(), size, MPI_INT, 0, comm);
-
-    // Prepare local row pointers
-    local_data.nrows = row_counts[rank];
-    local_data.kcol.resize(local_data.nrows + 1);
-
-    if (rank == 0) {
-      std::cout << "Row counts: ";
-      for (int i = 0; i < size; ++i) std::cout << row_counts[i] << " ";
-      std::cout << std::endl;
-
-      std::cout << "Row displs: ";
-      for (int i = 0; i < size; ++i) std::cout << row_displs[i] << " ";
-      std::cout << std::endl;
-    }
 
     // Prepare local row pointers
     local_data.nrows = row_counts[rank];
