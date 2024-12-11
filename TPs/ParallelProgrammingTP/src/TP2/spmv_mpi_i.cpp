@@ -58,11 +58,11 @@ void scatterCSRMatrix(
         nnz_counts[i] = full_data.kcol[row_displs[i] + row_counts[i]] - full_data.kcol[row_displs[i]];
       }
 
-      total_nnz = full_data.cols.size;
+      total_nnz = full_data.cols.size();
       total_size = full_data.kcol.size() + total_nnz*2;
 
-      buffer[0] = total_nnz;
-      buffer[1] = total_size;
+      combined_buffer[0] = total_nnz;
+      combined_buffer[1] = total_size;
 
       std::copy(row_counts.begin(), row_counts.end(), combined_buffer.begin() + 2);
       std::copy(row_displs.begin(), row_displs.end(), combined_buffer.begin() + size + 2);
