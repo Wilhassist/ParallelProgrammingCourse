@@ -252,6 +252,12 @@ int main(int argc, char** argv)
       for(std::size_t i=0;i<global_nrows;++i)
         x[i] = i+1 ;
 
+      std::cout << "local kcol: ";
+        for (const auto& val : matrix.data.kcol) {
+          std::cout << val << " ";
+        }
+        std::cout << std::endl;
+
       {
         Timer::Sentry sentry(timer,"SpMV") ;
         matrix.mult(x,y) ;
