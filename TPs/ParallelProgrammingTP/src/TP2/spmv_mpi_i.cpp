@@ -94,7 +94,7 @@ void scatterCSRMatrix(
           std::cout << val << " ";
         }
         std::cout << std::endl;
-        for (int& k : local_data.kcol) k -= local_row_offset;
+        for (int& k : local_data.kcol) k -= local_data.kcol[0];
     }
 
     
