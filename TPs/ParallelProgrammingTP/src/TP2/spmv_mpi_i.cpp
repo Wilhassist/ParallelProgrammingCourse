@@ -49,7 +49,7 @@ void scatterCSRMatrix(
 
         std::fill(row_counts.begin(), row_counts.end(), local_nrows);
         for (int i = 0; i < remainder; ++i) row_counts[i]++;
-        std::partial_sum(row_counts.begin(), row_counts.end(), row_displs.begin() + 1);
+        std::partial_sum(row_counts.begin(), row_counts.end() - 1, row_displs.begin());
     }
 
     // Broadcast counts and displacements
@@ -58,7 +58,7 @@ void scatterCSRMatrix(
 
     // Prepare local data
     local_data.nrows = row_counts[rank];
-    local_data.kcol.resize(local_data.nrows + 2);
+    local_data.kcol.resize(local_data.nrows + 1);
 
     /*if (rank == 0) {
         // Root process sends data to each process
@@ -83,7 +83,7 @@ void scatterCSRMatrix(
         row_displs.data(), 
         MPI_INT, 
         local_data.kcol.data(), 
-        row_counts[rank] + 2,  
+        row_counts[rank] + 1,  
         MPI_INT, 
         0, comm
     );
