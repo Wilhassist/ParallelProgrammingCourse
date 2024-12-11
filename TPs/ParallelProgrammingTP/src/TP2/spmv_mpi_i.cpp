@@ -98,12 +98,6 @@ void scatterCSRMatrix(
         for (int& k : local_data.kcol) k -= initial;
     }
 
-    
-    std::cout << "local kcol: ";
-    for (const auto& val : local_data.kcol) {
-      std::cout << val << " ";
-    }
-    std::cout << std::endl;
     // Calculate nnz counts
     std::vector<int> nnz_counts(size, 0);
     if (rank == 0) {
@@ -112,16 +106,6 @@ void scatterCSRMatrix(
         }
     }
     MPI_Bcast(nnz_counts.data(), size, MPI_INT, 0, comm);
-
-    /*if (rank == 0) {
-        for (int i = 0; i < size; ++i) {
-            std::cout << "Process " << i << ": "
-                      << "kcol count = " << row_counts[i] + 1 << ", "
-                      << "cols count = " << nnz_counts[i] << ", "
-                      << "values count = " << nnz_counts[i]
-                      << std::endl;
-        }
-    }*/
 
     std::vector<int> nnz_displs(size, 0);
     std::partial_sum(nnz_counts.begin(), nnz_counts.end() - 1, nnz_displs.begin() + 1);
@@ -253,24 +237,12 @@ int main(int argc, char** argv)
       for(std::size_t i=0;i<global_nrows;++i)
         x[i] = i+1 ;
 
-      std::cout << "local kcol: ";
-        for (const auto& val : matrix.data().kcol) {
-          std::cout << val << " ";
-        }
-        std::cout << std::endl;
-
       {
         Timer::Sentry sentry(timer,"SpMV") ;
         matrix.mult(x,y) ;
       }
       double normy = PPTP::norm2(y) ;
       std::cout<<"||y||="<<normy<<std::endl ;
-
-      std::cout << "global y true: ";
-        for (const auto& val : y) {
-          std::cout << val << " ";
-        }
-        std::cout << std::endl;
 
       Timer::Sentry sentry(timer,"MPI_SpMV") ;
       
@@ -299,20 +271,7 @@ int main(int argc, char** argv)
     std::vector<double> local_y(local_matrix.nrows());
     {
       local_matrix.mult(x,local_y);
-    }
-
-    for (int p = 0; p < world_size; ++p) {
-        if (world_rank == p) {
-            std::cout << "Rank " << world_rank << " local_y: ";
-            for (const auto& val : local_y) {
-                std::cout << val << " ";
-            }
-            std::cout << std::endl;
-        }
-        MPI_Barrier(MPI_COMM_WORLD); // Synchronize output
-    }
-
-    
+    }    
 
     // Gather the results back to process 0
     std::vector<double> y;
@@ -331,14 +290,6 @@ int main(int argc, char** argv)
         0,                          // Root process
         MPI_COMM_WORLD                       // Communicator
     );
-
-    if (world_rank == 0) {
-      std::cout << "Final gathered y: ";
-      for (const auto& val : y) {
-          std::cout << val << " ";
-      }
-      std::cout << std::endl;
-    }
 
     if (world_rank == 0)
     {
