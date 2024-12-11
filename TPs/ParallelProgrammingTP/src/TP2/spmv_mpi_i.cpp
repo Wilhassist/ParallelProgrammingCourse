@@ -62,7 +62,6 @@ void scatterCSRMatrix(
       std::copy(nnz_counts.begin(), nnz_counts.end(), combined_buffer.begin() + 2 * size);
     }
 
-
     // Broadcast counts and displacements
     MPI_Bcast(combined_buffer.data(), total_size, MPI_INT, 0, comm);
 
@@ -97,31 +96,40 @@ void scatterCSRMatrix(
     std::vector<int> nnz_displs(size, 0);
     std::partial_sum(nnz_counts.begin(), nnz_counts.end() - 1, nnz_displs.begin() + 1);
 
-    // Scatter columns and values
+    // Assuming full_data.cols and full_data.values are of the same size
+    std::vector<int> combined_cols_values(nnz_counts[size - 1] * 2);  // Enough space for both cols and values
+
+    // Pack cols and values into the combined buffer (only on rank 0)
+    if (rank == 0) {
+        for (int i = 0; i < nnz_counts[size - 1]; ++i) {
+            combined_cols_values[i] = full_data.cols[i];       // Pack cols
+            combined_cols_values[i + nnz_counts[size - 1]] = full_data.values[i];  // Pack values
+        }
+    }
+    std::vector<int> combined_buffer(nnz_counts[rank] * 2);  // For each process, 2 * nnz_counts[rank] space is needed (cols + values)
+
+    MPI_Scatterv(
+        combined_cols_values.data(),            // Scatter the combined buffer
+        nnz_counts.data(),                      // Counts of elements to send
+        nnz_displs.data(),                      // Displacements
+        MPI_BYTE,                               // Use MPI_BYTE to handle arbitrary types
+        combined_buffer.data(),                 // Local buffer to store scattered data
+        nnz_counts[rank] * 2,                   // Number of elements to receive (cols + values)
+        MPI_BYTE,                               // Data type
+        0,                                      // Root process
+        comm                                    // Communicator
+    );
+
+
+    // Separate cols and values from the combined buffer
     local_data.cols.resize(nnz_counts[rank]);
     local_data.values.resize(nnz_counts[rank]);
 
-    MPI_Scatterv(
-        full_data.cols.data(), 
-        nnz_counts.data(), 
-        nnz_displs.data(), 
-        MPI_INT, 
-        local_data.cols.data(), 
-        nnz_counts[rank], 
-        MPI_INT, 
-        0, comm
-    );
+    for (int i = 0; i < nnz_counts[rank]; ++i) {
+        local_data.cols[i] = combined_buffer[i];  // First half of combined buffer for cols
+        local_data.values[i] = combined_buffer[i + nnz_counts[rank]];  // Second half for values
+    }
 
-    MPI_Scatterv(
-        full_data.values.data(), 
-        nnz_counts.data(), 
-        nnz_displs.data(), 
-        MPI_DOUBLE, 
-        local_data.values.data(), 
-        nnz_counts[rank], 
-        MPI_DOUBLE, 
-        0, comm
-    );
 
     // Update nnz count
     local_data.nnz = nnz_counts[rank];

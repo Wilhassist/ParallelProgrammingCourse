@@ -40,21 +40,37 @@ void scatterCSRMatrix(
     MPI_Comm comm
 ) {
     std::size_t local_nrows;
-    
+    std::vector<int> nnz_counts(size, 0);
 
+    int total_size = 3 * size; // 3 arrays with 'size' elements each
+    std::vector<int> combined_buffer(total_size);
     if (rank == 0) {
-        // Partition rows
-        local_nrows = full_data.nrows / size;
-        std::size_t remainder = full_data.nrows % size;
+      // Partition rows
+      local_nrows = full_data.nrows / size;
+      std::size_t remainder = full_data.nrows % size;
 
-        std::fill(row_counts.begin(), row_counts.end(), local_nrows);
-        for (int i = 0; i < remainder; ++i) row_counts[i]++;
-        std::partial_sum(row_counts.begin(), row_counts.end(), row_displs.begin() + 1);
+      std::fill(row_counts.begin(), row_counts.end(), local_nrows);
+      for (int i = 0; i < remainder; ++i) row_counts[i]++;
+      std::partial_sum(row_counts.begin(), row_counts.end(), row_displs.begin() + 1);
+    
+      for (int i = 0; i < size; ++i) {
+        nnz_counts[i] = full_data.kcol[row_displs[i] + row_counts[i]] - full_data.kcol[row_displs[i]];
+      }
+
+      std::copy(row_counts.begin(), row_counts.end(), combined_buffer.begin());
+      std::copy(row_displs.begin(), row_displs.end(), combined_buffer.begin() + size);
+      std::copy(nnz_counts.begin(), nnz_counts.end(), combined_buffer.begin() + 2 * size);
     }
 
     // Broadcast counts and displacements
-    MPI_Bcast(row_counts.data(), size, MPI_INT, 0, comm);
-    MPI_Bcast(row_displs.data(), size, MPI_INT, 0, comm);
+    MPI_Bcast(combined_buffer.data(), total_size, MPI_INT, 0, comm);
+
+    if (rank != 0) {
+      row_counts.assign(combined_buffer.begin(), combined_buffer.begin() + size);
+      row_displs.assign(combined_buffer.begin() + size, combined_buffer.begin() + 2 * size);
+      nnz_counts.assign(combined_buffer.begin() + 2 * size, combined_buffer.end());
+    }
+
 
     // Prepare local data
     local_data.nrows = row_counts[rank];
@@ -71,36 +87,11 @@ void scatterCSRMatrix(
         0, comm
     );
 
-    // Adjust row pointers
-    std::vector<int> row_offsets(size, 0);
-
-    // Compute offsets on rank 0
-    if (rank == 0) {
-        for (int i = 0; i < size - 1; ++i) {
-            if (row_displs[i] < full_data.kcol.size()) {
-                row_offsets[i] = full_data.kcol[row_displs[i + 1]];
-            } 
-        }
-        row_offsets[size - 1] = full_data.kcol[full_data.kcol.size() - 1];
-    }
-
-    int local_row_offset = 0;
-    MPI_Scatter(row_offsets.data(), 1, MPI_INT, &local_row_offset, 1, MPI_INT, 0, comm);
-
     if (!local_data.kcol.empty()) {
         int initial = local_data.kcol[0];
-        local_data.kcol[row_counts[rank]] = local_row_offset;
         for (int& k : local_data.kcol) k -= initial;
+        local_data.kcol[local_data.kcol.size() - 1] = nnz_counts[rank];
     }
-
-    // Calculate nnz counts
-    std::vector<int> nnz_counts(size, 0);
-    if (rank == 0) {
-        for (int i = 0; i < size; ++i) {
-            nnz_counts[i] = full_data.kcol[row_displs[i] + row_counts[i]] - full_data.kcol[row_displs[i]];
-        }
-    }
-    MPI_Bcast(nnz_counts.data(), size, MPI_INT, 0, comm);
 
     std::vector<int> nnz_displs(size, 0);
     std::partial_sum(nnz_counts.begin(), nnz_counts.end() - 1, nnz_displs.begin() + 1);
