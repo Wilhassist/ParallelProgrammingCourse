@@ -108,7 +108,7 @@ void scatterCSRMatrix(
         }
     }
     
-    combined_buffer(nnz_counts[rank] * 2);  // For each process, 2 * nnz_counts[rank] space is needed (cols + values)
+    combined_buffer.resize(nnz_counts[rank] * 2);  // For each process, 2 * nnz_counts[rank] space is needed (cols + values)
 
     MPI_Scatterv(
         combined_cols_values.data(),            // Scatter the combined buffer
