@@ -106,14 +106,14 @@ void scatterCSRMatrix(
             combined_cols_values[i + nnz_counts[size - 1]] = full_data.values[i];  // Pack values
         }
     }
-    std::vector<int> combined_buffer(nnz_counts[rank] * 2);  // For each process, 2 * nnz_counts[rank] space is needed (cols + values)
+    std::vector<int> combined_buffer_2(nnz_counts[rank] * 2);  // For each process, 2 * nnz_counts[rank] space is needed (cols + values)
 
     MPI_Scatterv(
         combined_cols_values.data(),            // Scatter the combined buffer
         nnz_counts.data(),                      // Counts of elements to send
         nnz_displs.data(),                      // Displacements
         MPI_BYTE,                               // Use MPI_BYTE to handle arbitrary types
-        combined_buffer.data(),                 // Local buffer to store scattered data
+        combined_buffer_2.data(),                 // Local buffer to store scattered data
         nnz_counts[rank] * 2,                   // Number of elements to receive (cols + values)
         MPI_BYTE,                               // Data type
         0,                                      // Root process
@@ -126,8 +126,8 @@ void scatterCSRMatrix(
     local_data.values.resize(nnz_counts[rank]);
 
     for (int i = 0; i < nnz_counts[rank]; ++i) {
-        local_data.cols[i] = combined_buffer[i];  // First half of combined buffer for cols
-        local_data.values[i] = combined_buffer[i + nnz_counts[rank]];  // Second half for values
+        local_data.cols[i] = combined_buffer_2[i];  // First half of combined buffer for cols
+        local_data.values[i] = combined_buffer_2[i + nnz_counts[rank]];  // Second half for values
     }
 
 
