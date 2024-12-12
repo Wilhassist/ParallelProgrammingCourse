@@ -246,42 +246,7 @@ int main(int argc, char** argv)
       MPI_Bcast(x.data(), global_nrows, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     }
 
-    std::vector<int> row_counts(world_size, 0), row_displs(world_size, 0);
-
-    scatterCSRMatrix(full_data, local_data,row_counts,
-                   row_displs, world_rank, world_size, MPI_COMM_WORLD);
-
-    /*local_matrix.copyCSRMatrixFromCSRData(local_data);
     
-    // Step 7 : Computing the local multiplication
-    std::vector<double> local_y(local_matrix.nrows());
-    {
-      local_matrix.mult(x,local_y);
-    }    
-
-    // Gather the results back to process 0
-    std::vector<double> y;
-    if (world_rank == 0) {
-        y.resize(full_data.nrows);  // Resize on rank 0 to hold the entire result
-    }
-
-    MPI_Gatherv(
-        local_y.data(),             // Local buffer
-        local_y.size(),             // Number of elements to send
-        MPI_DOUBLE,                 // Data type
-        y.data(),                   // Global buffer (on rank 0)
-        row_counts.data(),          // Counts of rows per process
-        row_displs.data(),          // Displacements
-        MPI_DOUBLE,                 // Data type
-        0,                          // Root process
-        MPI_COMM_WORLD                       // Communicator
-    );
-
-    if (world_rank == 0)
-    {
-      double normy2 = PPTP::norm2(y);
-      std::cout<<"||MPI - y||="<<normy2<<std::endl;
-    }*/
   }
 
 
