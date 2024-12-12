@@ -234,7 +234,8 @@ int main(int argc, char** argv)
 
     }
 
-    
+    Timer::Sentry sentry(timer,"SpMV" + std::to_string(world_rank)) ;
+
     {
     // gloal_matrix_size
     MPI_Bcast(&global_nrows, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
@@ -261,10 +262,7 @@ int main(int argc, char** argv)
     std::vector<double> y;
     if (world_rank == 0) {
         y.resize(full_data.nrows);  // Resize on rank 0 to hold the entire result
-    }
-
-    if (world_rank == 0) 
-        Timer::Sentry sentry(timer,"MPI_SpMV");
+    } 
 
     MPI_Gatherv(
         local_y.data(),             // Local buffer
