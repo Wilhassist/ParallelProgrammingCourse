@@ -239,6 +239,7 @@ int main(int argc, char** argv)
 
     
     {
+      Timer::Sentry sentry(timer,"MPI_SpMV") ;
       // gloal_matrix_size
       MPI_Bcast(&global_nrows, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
 
