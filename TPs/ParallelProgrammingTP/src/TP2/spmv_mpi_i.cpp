@@ -235,7 +235,7 @@ int main(int argc, char** argv)
     }
 
     
-
+    std::vector<double> y;
     {
       Timer::Sentry sentry(timer,"SpMV " + std::to_string(world_rank)) ;
       // gloal_matrix_size
@@ -259,7 +259,6 @@ int main(int argc, char** argv)
       }    
 
       // Gather the results back to process 0
-      std::vector<double> y;
       if (world_rank == 0) {
           y.resize(full_data.nrows);  // Resize on rank 0 to hold the entire result
       } 
