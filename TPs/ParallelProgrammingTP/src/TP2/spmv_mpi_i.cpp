@@ -281,8 +281,8 @@ int main(int argc, char** argv)
     {
       double normy2 = PPTP::norm2(y);
       std::cout<<"||MPI - y||="<<normy2<<std::endl;
-    }
-  }*/
+    }*/
+  }
 
 
   if(world_rank == 0)
