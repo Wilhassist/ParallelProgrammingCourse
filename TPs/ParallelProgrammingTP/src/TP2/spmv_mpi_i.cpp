@@ -230,8 +230,9 @@ int main(int argc, char** argv)
       double normy = PPTP::norm2(y) ;
       std::cout<<"||y||="<<normy<<std::endl ;
 
+      {
       Timer::Sentry sentry(timer,"MPI_SpMV") ;
-      
+      }
       full_data = matrix.data();
 
     }
