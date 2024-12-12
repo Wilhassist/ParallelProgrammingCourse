@@ -251,7 +251,7 @@ int main(int argc, char** argv)
     scatterCSRMatrix(full_data, local_data,row_counts,
                    row_displs, world_rank, world_size, MPI_COMM_WORLD);
 
-    local_matrix.copyCSRMatrixFromCSRData(local_data);
+    /*local_matrix.copyCSRMatrixFromCSRData(local_data);
     
     // Step 7 : Computing the local multiplication
     std::vector<double> local_y(local_matrix.nrows());
@@ -282,7 +282,7 @@ int main(int argc, char** argv)
       double normy2 = PPTP::norm2(y);
       std::cout<<"||MPI - y||="<<normy2<<std::endl;
     }
-  }
+  }*/
 
 
   if(world_rank == 0)
