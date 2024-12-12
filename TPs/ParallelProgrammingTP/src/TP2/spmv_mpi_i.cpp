@@ -243,7 +243,7 @@ int main(int argc, char** argv)
     // vector x
     x.resize(global_nrows);
     MPI_Bcast(x.data(), global_nrows, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-    
+    }
 
     std::vector<int> row_counts(world_size, 0), row_displs(world_size, 0);
 
@@ -281,12 +281,11 @@ int main(int argc, char** argv)
       double normy2 = PPTP::norm2(y);
       std::cout<<"||MPI - y||="<<normy2<<std::endl;
     }
-    }
+    
   }
 
 
-  if(world_rank == 0)
-    timer.printInfo();
+  timer.printInfo();
 
   MPI_Finalize();
   return 0 ;
