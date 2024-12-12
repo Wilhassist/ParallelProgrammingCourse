@@ -236,13 +236,15 @@ int main(int argc, char** argv)
 
     
     {
-      Timer::Sentry sentry(timer,"MPI_SpMV");
-      // gloal_matrix_size
-      MPI_Bcast(&global_nrows, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
 
-      // vector x
-      x.resize(global_nrows);
-      MPI_Bcast(x.data(), global_nrows, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    if(world_rank == 0)
+      Timer::Sentry sentry(timer,"MPI_SpMV");
+    // gloal_matrix_size
+    MPI_Bcast(&global_nrows, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
+
+    // vector x
+    x.resize(global_nrows);
+    MPI_Bcast(x.data(), global_nrows, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     
 
     std::vector<int> row_counts(world_size, 0), row_displs(world_size, 0);
