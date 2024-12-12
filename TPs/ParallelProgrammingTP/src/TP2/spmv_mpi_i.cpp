@@ -263,6 +263,7 @@ int main(int argc, char** argv)
     // Gather the results back to process 0
     std::vector<double> y;
     if (world_rank == 0) {
+        Timer::Sentry sentry(timer,"MPI_SpMV");
         y.resize(full_data.nrows);  // Resize on rank 0 to hold the entire result
     }
 
@@ -280,6 +281,7 @@ int main(int argc, char** argv)
 
     if (world_rank == 0)
     {
+      Timer::Sentry sentry(timer,"MPI_SpMV");
       double normy2 = PPTP::norm2(y);
       std::cout<<"||MPI - y||="<<normy2<<std::endl;
     }
