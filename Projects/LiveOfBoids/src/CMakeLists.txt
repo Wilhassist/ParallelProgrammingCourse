@@ -1,19 +1,28 @@
-FIND_PACKAGE(glfw3 3.3 REQUIRED) # REQUIRED means : "fatal if not found"
-FIND_PACKAGE(glad REQUIRED)
-FIND_PACKAGE(OpenCV REQUIRED)
+find_package(glfw3 3.3 REQUIRED)
+find_package(glad REQUIRED)
+find_package(fmt REQUIRED)
+find_package(PNG REQUIRED)
+find_package(TBB REQUIRED)
 
-add_subdirectory("lib/myLaws")
-add_subdirectory("lib/myMath")
-add_subdirectory("resources/graphics")
-add_subdirectory("resources/model")
-add_subdirectory("resources/controller")
-add_subdirectory("resources/graphics/shaders")
+file(GLOB_RECURSE ALL_CPP_FILES "*.cpp")
 
-add_executable(mathPart math_main.cpp)
-target_link_libraries(mathPart PUBLIC myMath)
+# List of files to exclude
+list(REMOVE_ITEM ALL_CPP_FILES "main.cpp")
 
-add_executable(main_profiling main_profiling.cpp)
-target_link_libraries(main_profiling PUBLIC libGLX myMath shaders myBirds myLaws opencv::opencv flockGenerator)
+# Create a library from the remaining .cpp files
+add_library(my_libraries ${ALL_CPP_FILES})
 
-add_executable(life-of-boids main.cpp)
-target_link_libraries(life-of-boids PUBLIC libGLX myMath shaders myBirds myLaws opencv::opencv flockGenerator)
+
+target_include_directories(my_libraries PUBLIC 
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include/laws
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include/utils
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include/agents
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include/graphics
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include/graphics/shaders
+)
+
+target_link_libraries(my_libraries PUBLIC glfw glad::glad PNG::PNG fmt::fmt TBB::tbb)
+
+add_executable(freebirds main.cpp)
+target_link_libraries(freebirds my_libraries fmt::fmt)
