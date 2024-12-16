@@ -17,6 +17,7 @@
 ### indiquer votre executable
 MONPROG_DENSE=./bin/densemv.exe
 MONPROG_SPMV=./bin/spmv_mpi.exe
+
 ### indiquer votre fichier de donnees
 MYDATA=
 

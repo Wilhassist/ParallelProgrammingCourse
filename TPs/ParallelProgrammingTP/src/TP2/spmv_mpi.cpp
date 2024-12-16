@@ -71,7 +71,6 @@ void scatterCSRMatrix(
       nnz_counts.assign(combined_buffer.begin() + 2 * size, combined_buffer.end());
     }
 
-
     // Prepare local data
     local_data.nrows = row_counts[rank];
     local_data.kcol.resize(local_data.nrows + 1);
@@ -253,6 +252,7 @@ int main(int argc, char** argv)
 
     scatterCSRMatrix(full_data, local_data,row_counts,
                    row_displs, world_rank, world_size, MPI_COMM_WORLD);
+
 
     local_matrix.copyCSRMatrixFromCSRData(local_data);
     
