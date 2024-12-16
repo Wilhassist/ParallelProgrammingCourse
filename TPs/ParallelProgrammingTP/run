@@ -15,7 +15,7 @@
 ### usage : oarsub -l core=32 -S ./job_exemple.sh
 
 ### indiquer votre executable
-MONPROG=./bin/spmv_mpi.exe
+MONPROG=./bin/densemv.exe
 ### indiquer votre fichier de donnees
 MYDATA=
 
