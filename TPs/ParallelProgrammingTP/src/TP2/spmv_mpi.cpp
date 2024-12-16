@@ -225,10 +225,13 @@ int main(int argc, char** argv)
 
       {
         Timer::Sentry sentry(timer,"SpMV") ;
-        matrix.mult(x,y) ;
-      }
+        {
+          matrix.mult(x,y) ;
+        }
       double normy = PPTP::norm2(y) ;
       std::cout<<"||y||="<<normy<<std::endl ;
+      }
+      
 
       Timer::Sentry sentry(timer,"MPI_SpMV") ;
       
