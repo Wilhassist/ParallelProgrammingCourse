@@ -45,6 +45,7 @@ target_include_directories(my_libraries PUBLIC
 # Link TBB to the library
 if(OpenMP_CXX_FOUND)
     target_link_libraries(my_libraries PUBLIC ${TBB_LIBRARIES} OpenMP::OpenMP_CXX)
+endif()
 
 # Define the executable
 add_executable(freebirds main.cpp)
