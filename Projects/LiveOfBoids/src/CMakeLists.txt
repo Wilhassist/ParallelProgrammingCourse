@@ -19,6 +19,8 @@ endif()
 include_directories(${TBB_INCLUDE_DIR})
 link_directories(${TBB_LIBRARY_DIR})
 
+find_package(OpenMP REQUIRED)
+
 # Manually specify the TBB library to link
 set(TBB_LIBRARIES tbb tbbmalloc)
 
@@ -41,7 +43,8 @@ target_include_directories(my_libraries PUBLIC
 )
 
 # Link TBB to the library
-target_link_libraries(my_libraries PUBLIC ${TBB_LIBRARIES})
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(my_libraries PUBLIC ${TBB_LIBRARIES} OpenMP::OpenMP_CXX)
 
 # Define the executable
 add_executable(freebirds main.cpp)
