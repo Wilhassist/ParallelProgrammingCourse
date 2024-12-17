@@ -5,7 +5,7 @@
 #include "../include/config.hpp"
 
 #include "Grid.hpp"
-#include <bits/chrono.h>
+#include <chrono>
 
 int main(int argc, char* argv[]) {
     // Load default configuration

@@ -1,5 +1,3 @@
-find_package(TBB REQUIRED)
-
 file(GLOB_RECURSE ALL_CPP_FILES "*.cpp")
 
 # List of files to exclude
@@ -16,7 +14,7 @@ target_include_directories(my_libraries PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/agents
 )
 
-target_link_libraries(my_libraries PUBLIC TBB::tbb)
+target_link_libraries(my_libraries PUBLIC)
 
 add_executable(freebirds main.cpp)
 target_link_libraries(freebirds my_libraries)
