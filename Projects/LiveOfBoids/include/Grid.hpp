@@ -5,7 +5,7 @@
 #include "./agents/Agent.hpp"
 #include <string>
 
-enum class Mode { Seq, Omp, Tbb };
+enum class Mode { Seq, Omp, Tbb, Default};
 
 class Grid {
 private:

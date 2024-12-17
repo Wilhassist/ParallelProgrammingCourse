@@ -10,6 +10,7 @@ std::string modeToString(Mode mode) {
         case Mode::Seq: return "seq";
         case Mode::Omp: return "omp";
         case Mode::Tbb: return "tbb";
+        case Mode::Default: return "default";
         default: return "unknown";
     }
 }
@@ -18,7 +19,8 @@ Mode stringToMode(const std::string& mode) {
     static const std::unordered_map<std::string, Mode> modeMap = {
         {"seq", Mode::Seq},
         {"omp", Mode::Omp},
-        {"tbb", Mode::Tbb}
+        {"tbb", Mode::Tbb},
+        {"default", Mode::Default},
     };
 
     auto it = modeMap.find(mode);
