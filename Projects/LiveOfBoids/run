@@ -8,11 +8,11 @@ rm -rf OAR.*
 rm -rf boids.log
 touch boids.log
 if [ -f $MONPROG ] ; then
-    for mode in "seq" "omp" "tbb" 
+    for np in 1 2 4 8 12 16 24
     do
       for boids in 100 500 1000 2000 10000
         do
-        $MONPROG --numAgents $boids --numPredators 0 --numPreys 0  --mode $mode >> boids.log
+        $MONPROG --numAgents $boids --numPredators 0 --numPreys 0  --nbThreads $np >> boids.log
       done
     done
 else
