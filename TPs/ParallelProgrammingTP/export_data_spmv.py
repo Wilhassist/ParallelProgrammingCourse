@@ -29,10 +29,10 @@ def extract_benchmark_data(file_path):
     
     # Return the extracted data as a dictionary
     return {
-        'NX': nx_value,
-        'NPI': np_value,
-        'MPI_SpMV': mpi_spmv_value,
-        'SpMV': spmv_value
+        'nx': nx_value,
+        'np': np_value,
+        'MPI_SpMV_time': mpi_spmv_value,
+        'SpMV_time': spmv_value
     }
 
 # Function to process all log files in a directory with the specific format

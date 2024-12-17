@@ -9,16 +9,16 @@ os.makedirs(output_dir, exist_ok=True)
 
 # Techniques to evaluate
 modes = df['Mode'].unique()
+baseline = df[df['Mode'] == "seq"]
+df = df.merge(
+    baseline[['NumBoids', 'nbThreads', 'Time']].rename(columns={'Time': 'seq_baseline'}),
+    on=['NumBoids', 'nbThreads'], 
+    how='left'
+    )
 
 # Derived metrics: Calculate speedup and efficiency for each mode
 for mode in modes:
-    baseline = df[(df['Mode'] == "seq") & (df['nbThreads'] == 1)]
-    df = df.merge(
-        baseline[['NumBoids', 'Time']].rename(columns={'Time': f'{mode}_baseline'}),
-        on='NumBoids',
-        how='left'
-    )
-    df[f'{mode}_speedup'] = df[f'{mode}_baseline'] / df['Time']
+    df[f'{mode}_speedup'] = df['seq_baseline'] / df[f'Time']
     df[f'{mode}_efficiency'] = df[f'{mode}_speedup'] / df['nbThreads']
 
 # Group the data by NumBoids
