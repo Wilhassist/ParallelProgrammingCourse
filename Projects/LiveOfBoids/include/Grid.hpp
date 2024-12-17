@@ -9,13 +9,13 @@ enum class Mode { Seq, Omp, Tbb };
 
 class Grid {
 private:
-    int gridWidth, gridHeight; // Number of cells in each dimension
+    int gridWidth, gridHeight, nbThreads; // Number of cells in each dimension
     float cellSize, margin;            // Size of each cell
     Mode mode;
     std::vector<std::vector<std::vector<Agent*>>> cells;
 
 public:
-    Grid(int width, int height, float cellSize, float margin, std::string mode);
+    Grid(int width, int height, float cellSize, float margin, std::string mode, int nb_threads);
     void clear();
     void addBoid(Agent* agent);
     std::vector<Agent*> findNeighbors(Agent* agent);

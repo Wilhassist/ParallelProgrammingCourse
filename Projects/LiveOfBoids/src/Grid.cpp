@@ -29,8 +29,8 @@ Mode stringToMode(const std::string& mode) {
     throw std::invalid_argument("Invalid mode. Allowed values: seq, omp, tbb.");
 }
 
-Grid::Grid(int width, int height, float cellSize, float margin, std::string mode) 
-    : gridWidth(static_cast<int>(width / cellSize)), gridHeight(static_cast<int>(height / cellSize)), cellSize(cellSize), margin(margin), mode(stringToMode(mode)){
+Grid::Grid(int width, int height, float cellSize, float margin, std::string mode, int nb_threads) 
+    : gridWidth(static_cast<int>(width / cellSize)), gridHeight(static_cast<int>(height / cellSize)), cellSize(cellSize), margin(margin), mode(stringToMode(mode)), nbThreads(nb_threads){
         cells.resize(gridWidth, std::vector<std::vector<Agent*>>(gridHeight));
 }
 
@@ -143,6 +143,16 @@ Grid::findNeighborsPredatorsAndPrey(Agent* agent) {
 
 
 void Grid::updateBoids(){
+    if(nbThreads>0)
+    {
+        omp_set_num_threads(nbThreads) ;
+        tbb::task_scheduler_init init(nbThreads);
+    }
+    int nb_procs     = omp_get_num_procs() ;
+    std::cout<<"NB PROCS     :"<<nb_procs<<std::endl ;
+    int nb_available_threads = omp_get_max_threads() ;
+    std::cout<<"NB AVAILABLE_THREADS :"<<nb_available_threads<<std::endl ;
+
     switch (mode)
     {
     case Mode::Seq:

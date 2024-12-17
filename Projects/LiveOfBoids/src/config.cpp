@@ -51,6 +51,8 @@ SimulationConfig parseArguments(int argc, char* argv[], SimulationConfig default
 
         else if (arg == "--mode" && i + 1 < argc) {
             defaultConfig.mode= std::string(argv[++i]);
+        } else if (arg == "--nb_threads" && i + 1 < argc) {
+            defaultConfig.nbThreads= std::stoi(argv[++i]);
         }
 
         // Add more parameters as needed

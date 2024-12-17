@@ -22,7 +22,7 @@ int main(int argc, char* argv[]) {
     agentFactory.createPreys();
     
     // global loop
-    Grid grid(agentFactory.ratio() * agentFactory.width(), agentFactory.ratio() * agentFactory.height(), config.cellSize, config.margin, config.mode);
+    Grid grid(agentFactory.ratio() * agentFactory.width(), agentFactory.ratio() * agentFactory.height(), config.cellSize, config.margin, config.mode, config.nbThreads);
 
     auto allAgents = agentFactory.getAllAgents();
     for (const auto& agent : allAgents) {

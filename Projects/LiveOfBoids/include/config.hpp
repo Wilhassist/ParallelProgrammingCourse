@@ -28,6 +28,7 @@ struct SimulationConfig {
     float shaderType = 0.0;
 
     std::string mode = "seq";
+    int nbThreads = 0;
 };
 
 SimulationConfig parseArguments(int argc, char* argv[], SimulationConfig defaultConfig);
