@@ -2,8 +2,7 @@
 #include <cmath>
 #include <algorithm>
 #include <omp.h>
-#include <tbb/parallel_for.h>
-#include <tbb/blocked_range2d.h>
+#include <tbb/tbb.h>
 #include <unordered_map>
 
 std::string modeToString(Mode mode) {
