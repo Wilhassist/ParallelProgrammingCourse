@@ -154,7 +154,7 @@ void Grid::updateBoids(){
     default:
         updateBoidsSeq();
     }
-    std::cout<<"Mode: "<<modeToString(mode)<<std::endl;
+    //std::cout<<"Mode: "<<modeToString(mode)<<std::endl;
 }
 
 // Update all agents based on the rules
