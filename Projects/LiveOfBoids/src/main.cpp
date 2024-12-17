@@ -37,7 +37,7 @@ int main(int argc, char* argv[]) {
         grid.updateBoids();
         auto now = std::chrono::steady_clock::now();
         auto duration = std::chrono::duration<double>(now - last_time).count();
-        std::cout<<"Mode: "<<config.mode<<"nbThreads:" << config.nbThreads<<" NumBoids: "<< config.numAgents <<" Time: "<< duration <<std::endl;
+        std::cout<<"Mode: "<<config.mode<<" nbThreads: " << config.nbThreads<<" NumBoids: "<< config.numAgents <<" Time: "<< duration <<std::endl;
 
     }
     exit(EXIT_SUCCESS);
