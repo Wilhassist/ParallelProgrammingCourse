@@ -1,14 +1,26 @@
 # Check if TBB_ROOT is set
 if(NOT DEFINED ENV{TBB_ROOT})
-    message(FATAL_ERROR "Environment variable TBB_ROOT is not set. Please set it before running CMake.")
+    message(FATAL_ERROR "Environment variable TBB_ROOT is not set. Please set it to the TBB installation directory.")
 endif()
 
 # Define TBB paths
-set(TBB_INCLUDE_PATH "$ENV{TBB_ROOT}/include" CACHE PATH "Path to TBB include directory" FORCE)
-set(TBB_LIBRARY_PATH "$ENV{TBB_ROOT}/lib" CACHE PATH "Path to TBB library directory" FORCE)
+set(TBB_INCLUDE_DIR "$ENV{TBB_ROOT}/include")
+set(TBB_LIBRARY_DIR "$ENV{TBB_ROOT}/lib")
 
-# Include TBB
-find_package(TBB REQUIRED)
+# Check if paths exist
+if(NOT EXISTS ${TBB_INCLUDE_DIR})
+    message(FATAL_ERROR "TBB include directory not found at ${TBB_INCLUDE_DIR}")
+endif()
+if(NOT EXISTS ${TBB_LIBRARY_DIR})
+    message(FATAL_ERROR "TBB library directory not found at ${TBB_LIBRARY_DIR}")
+endif()
+
+# Add TBB include and library paths
+include_directories(${TBB_INCLUDE_DIR})
+link_directories(${TBB_LIBRARY_DIR})
+
+# Manually specify the TBB library to link
+set(TBB_LIBRARIES tbb tbbmalloc)
 
 # Find all .cpp files in the source directory
 file(GLOB_RECURSE ALL_CPP_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
@@ -25,11 +37,11 @@ target_include_directories(my_libraries PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/laws
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/utils
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/agents
-    ${TBB_INCLUDE_PATH} # Add TBB include path
+    ${TBB_INCLUDE_DIR} # Add TBB include path
 )
 
 # Link TBB to the library
-target_link_libraries(my_libraries PUBLIC TBB::tbb)
+target_link_libraries(my_libraries PUBLIC ${TBB_LIBRARIES})
 
 # Define the executable
 add_executable(freebirds main.cpp)
