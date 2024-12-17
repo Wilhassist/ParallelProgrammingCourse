@@ -147,11 +147,6 @@ void Grid::updateBoids(){
         omp_set_num_threads(nbThreads) ;
         tbb::task_scheduler_init init(nbThreads);
     }
-    int nb_procs     = omp_get_num_procs() ;
-    std::cout<<"NB PROCS     :"<<nb_procs<<std::endl ;
-    int nb_available_threads = omp_get_max_threads() ;
-    std::cout<<"NB AVAILABLE_THREADS :"<<nb_available_threads<<std::endl ;
-
     switch (mode)
     {
     case Mode::Seq:
