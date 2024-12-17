@@ -36,5 +36,12 @@ int main(int argc, char* argv[]) {
 
     grid.updateBoids();
 
+    auto now = std::chrono::steady_clock::now();
+    auto duration = std::chrono::duration<double>(now - last_time).count();
+
+    auto fps = static_cast<double>(count) / accumulated_time;
+
+    std::cout<<"Time: "<< fps<<std::endl;
+
     exit(EXIT_SUCCESS);
 }
