@@ -4,7 +4,7 @@ MONPROG=./src/freebirds
 
 echo DEBUT
 date
-rm -rf OAR.*
+#rm -rf OAR.*
 if [ -f $MONPROG ] ; then
     for mode in "seq" "omp" "tbb" 
     do
