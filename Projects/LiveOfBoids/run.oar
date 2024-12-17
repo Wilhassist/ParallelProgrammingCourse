@@ -1,6 +1,9 @@
 #!/bin/bash
 
 MONPROG = ./src/freebirds
+
+echo DEBUT
+date
 if [ -f $MONPROG ] ; then
     for mode in "seq" "omp" "tbb" 
     do
