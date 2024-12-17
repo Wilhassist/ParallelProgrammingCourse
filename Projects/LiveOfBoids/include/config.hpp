@@ -27,7 +27,7 @@ struct SimulationConfig {
     float colorMode = 1.0;
     float shaderType = 0.0;
 
-    std::string mode = "seq";
+    std::string mode = "default";
     int nbThreads = 0;
 };
 

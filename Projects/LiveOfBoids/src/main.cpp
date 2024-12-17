@@ -31,14 +31,23 @@ int main(int argc, char* argv[]) {
 
     std::vector<std::string> modes = {"seq", "omp", "tbb"};
 
-    for(const auto& mode : modes){
-        config.mode = mode;
+    if(config.mode == "default"){
+        for(const auto& mode : modes){
+            config.mode = mode;
+            auto last_time = std::chrono::steady_clock::now();
+            grid.updateBoids();
+            auto now = std::chrono::steady_clock::now();
+            auto duration = std::chrono::duration<double>(now - last_time).count();
+            std::cout<<"Mode: "<<config.mode<<" nbThreads: " << config.nbThreads<<" NumBoids: "<< config.numAgents <<" Time: "<< duration <<std::endl;
+        }
+    } else {
         auto last_time = std::chrono::steady_clock::now();
         grid.updateBoids();
         auto now = std::chrono::steady_clock::now();
         auto duration = std::chrono::duration<double>(now - last_time).count();
         std::cout<<"Mode: "<<config.mode<<" nbThreads: " << config.nbThreads<<" NumBoids: "<< config.numAgents <<" Time: "<< duration <<std::endl;
-
     }
+
+    
     exit(EXIT_SUCCESS);
 }

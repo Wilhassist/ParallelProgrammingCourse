@@ -1,7 +1,8 @@
 #include "AgentFactory.hpp"
 
 void AgentFactory::calculateRatio(){
-    m_ratio = std::max(std::min(std::max(1.2 * m_config.numAgents / 2000, 1.2), 1.2 * m_config.numAgents / 500), 1.1);
+    //m_ratio = std::max(std::min(std::max(1.2 * m_config.numAgents / 2000, 1.2), 1.2 * m_config.numAgents / 500), 1.1);
+    m_ratio = 1;
 }
 
 void AgentFactory::calculateOffset(){
