@@ -55,4 +55,4 @@ def process_benchmark_logs(directory):
 log_directory = '.'
 df = process_benchmark_logs(log_directory)
 
-df.to_csv('benchmark_sparse_results.csv', index=False)
+df.to_csv('results_spmv.csv', index=False)
