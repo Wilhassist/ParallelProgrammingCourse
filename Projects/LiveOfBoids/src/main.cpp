@@ -34,8 +34,7 @@ int main(int argc, char* argv[]) {
     auto now = std::chrono::steady_clock::now();
     auto duration = std::chrono::duration<double>(now - last_time).count();
 
-    std::cout<<"NumBoids: "<< config.numAgents + config.numPredators + config.numPreys<<std::endl;
-    std::cout<<"Time: "<< duration<<std::endl;
+    std::cout<<"Mode: "<<config.mode<<" NumBoids: "<< config.numAgents <<" Time: "<< duration <<std::endl;
 
     exit(EXIT_SUCCESS);
 }
