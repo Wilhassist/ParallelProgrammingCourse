@@ -1,16 +1,9 @@
 [requires]
-gtest/1.14.0
-#cli11/1.9.1
-#spdlog/1.8.5
-fmt/11.0.2
-glfw/3.3.8
-glad/0.1.36
-libpng/1.6.44
-onetbb/2021.10.0
+gtest/1.10.0
+glfw/3.3.3
+glad/0.1.34
+opencv/4.5.1
 
 [generators]
-CMakeDeps
-CMakeToolchain
-
-[layout]
-cmake_layout
+cmake_paths
+cmake_find_package
