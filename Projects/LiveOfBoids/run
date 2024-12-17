@@ -1,6 +1,6 @@
 #!/bin/bash
 
-MONPROG = ./src/freebirds
+MONPROG=./src/freebirds
 
 echo DEBUT
 date
